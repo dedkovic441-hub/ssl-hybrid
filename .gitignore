@@ -1,0 +1,8 @@
+__pycache__/
+run/
+data/
+*.log
+*.jsonl
+state.json
+summary.json
+live.json
