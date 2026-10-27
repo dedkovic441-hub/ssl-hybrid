@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e14">
+<title>SSL Hybrid Live · Binance</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{--bg:#0b0e14;--card:#141923;--card2:#1b2130;--line:#262e3f;--tx:#e6e9ef;--mut:#8a93a6;--up:#22c55e;--dn:#ef4444;--acc:#3b82f6;--warn:#f59e0b;--ex:#a78bfa}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:20;background:rgba(11,14,20,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 12px calc(8px);padding-top:max(10px,env(safe-area-inset-top))}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+h1{font-size:17px;margin:0;flex:1;font-weight:650}
+.meta{font-size:12px;color:var(--mut)}
+button,select,input{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:10px;min-height:44px;padding:0 12px}
+button{cursor:pointer}
+button:active{transform:scale(.97)}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;flex:1;min-width:0}
+.seg button{flex:1;border:0;background:transparent;min-height:40px;padding:0 6px;border-radius:9px;color:var(--mut);white-space:nowrap}
+.seg button.on{background:var(--acc);color:#fff;font-weight:600}
+main{padding:10px 12px 40px;max-width:1100px;margin:0 auto}
+.ctl{display:grid;gap:8px;margin-bottom:10px}
+.tabs{display:flex;gap:8px;margin:8px 0}
+.tabs button{flex:1}
+.tabs button.on{background:var(--acc);border-color:var(--acc);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{position:sticky;top:0;text-align:right;color:var(--mut);font-weight:500;font-size:12px;padding:10px 4px;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{text-align:right;padding:9px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.r{cursor:pointer}
+tr.r:active{background:var(--card2)}
+tr.fresh{background:rgba(245,158,11,.12)}
+.badge{display:inline-block;min-width:40px;text-align:center;padding:3px 5px;border-radius:7px;font-size:12px;font-weight:650}
+.bull{background:rgba(34,197,94,.18);color:var(--up)}.bear{background:rgba(239,68,68,.18);color:var(--dn)}.neu{background:rgba(138,147,166,.18);color:var(--mut)}
+.pos{color:var(--up)}.neg{color:var(--dn)}
+.new{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-left:4px;vertical-align:middle}
+.sub{display:block;font-size:11px;color:var(--mut)}
+.tblwrap{overflow-x:auto;margin:0 -12px;padding:0 12px}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi{background:var(--card2);border-radius:10px;padding:9px 10px}
+.kpi .l{font-size:11px;color:var(--mut)}.kpi .v{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:11px;color:var(--mut)}
+#pc{height:360px}#ec{height:220px}
+.legend{font-size:12px;color:var(--mut);display:flex;gap:10px;flex-wrap:wrap;margin:6px 0}
+.dot{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.sym{display:flex;gap:8px}.sym select{flex:1;min-width:0}.sym input{width:110px;text-transform:uppercase}
+.prog{height:3px;background:var(--acc);width:0;transition:width .2s;position:absolute;left:0;bottom:-1px}
+.note{font-size:12px;color:var(--mut);margin-top:14px}
+.err{color:var(--dn);font-size:13px}
+.hide{display:none}
+.runbar{display:flex;gap:8px;align-items:stretch}
+#runBtn{flex:1;min-height:54px;font-size:19px;font-weight:700;background:#16a34a;border-color:#16a34a;color:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(22,163,74,.35)}
+#runBtn:disabled{background:#14532d;border-color:#14532d;color:#bbf7d0;cursor:wait;box-shadow:none}
+#runBtn.attn{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}50%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}
+.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .8s linear infinite;display:none}
+#runBtn:disabled .spin{display:inline-block}
+@keyframes rot{to{transform:rotate(360deg)}}
+.auto{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:13px;color:var(--mut);white-space:nowrap;cursor:pointer;min-height:54px}
+.auto input{width:22px;height:22px;min-height:0;accent-color:#16a34a;margin:0}
+.runinfo{font-size:12px;color:var(--mut);margin-top:-2px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.stale{display:none;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.5);color:var(--warn);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:600}
+body.isStale .stale{display:block}
+body.onPaper #tfSeg,body.onPaper #dirSeg,body.onPaper #exSeg,body.onPaper .ctl>.cap{display:none}
+.tabs button{padding:0 6px;white-space:nowrap}
+.sim{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.45);border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:10px}
+.sim b{color:#93c5fd}
+.pform{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pform label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)}
+.pform .full{grid-column:1/-1}
+.pform input,.pform select{width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{flex-direction:row;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:0 10px;min-height:40px;color:var(--tx);font-size:14px;cursor:pointer}
+.chips input{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--acc)}
+.chips.off{opacity:.4;pointer-events:none}
+#pReset{background:#7c2d12;border-color:#9a3412;color:#fed7aa;font-weight:600}
+.big{font-size:28px;font-weight:750;font-variant-numeric:tabular-nums}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.cd{font-variant-numeric:tabular-nums;font-size:13px;color:var(--mut);text-align:right}
+.cd b{font-size:20px;color:var(--tx)}
+.newsig{display:none;background:rgba(245,158,11,.16);border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:9px 12px;font-weight:650;font-size:14px;margin-bottom:10px;animation:pulse2 1.6s ease-in-out infinite}
+@keyframes pulse2{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}50%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}
+#ppc{height:230px}#ppx{height:330px}
+.simtag{display:inline-block;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.55);color:var(--warn);border-radius:8px;padding:2px 8px;font-size:11.5px;font-weight:650;margin-bottom:6px}
+.pseg{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;min-height:44px}
+.pseg button{flex:1;border:0;background:transparent;min-height:36px;padding:0 6px;border-radius:8px;color:var(--mut);white-space:nowrap}
+.pseg button.on{background:var(--acc);color:#fff;font-weight:600}
+.cseg{flex-wrap:wrap}.cseg button{flex:1 0 auto;min-width:52px}
+html,body{overflow-x:hidden;max-width:100%}
+main,section,.card{min-width:0;max-width:100%}
+#ppc,#ppx,#pc,#ec{width:100%;overflow:hidden}
+.h3{font-weight:650;margin-bottom:6px}
+.empty{color:var(--mut);font-size:13px;padding:8px 0}
+body.isStale #vSig .card,body.isStale #vDet .card{opacity:.45;transition:opacity .2s}
+.cap{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px 3px 3px 12px}
+.cap label{flex:1;color:var(--mut);font-size:14px}
+.cap input{width:130px;text-align:right;font-variant-numeric:tabular-nums}
+@media(min-width:760px){.pform{grid-template-columns:1.3fr 1fr 1fr 1fr}#ppc{height:280px}#ppx{height:420px}.ctl{grid-template-columns:1.4fr 1fr 1fr 1fr}.runbar,.runinfo,.stale{grid-column:1/-1}.kpis{grid-template-columns:repeat(4,1fr)}#pc{height:440px}#ec{height:260px}}
+/* ---- Real bot tab ---- */
+body.onBot .ctl{display:none}
+#tabBot{font-weight:650}
+.rbtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:5px 12px;font-weight:750;font-size:13px;letter-spacing:.04em}
+.pill i{width:9px;height:9px;border-radius:50%;background:currentColor;display:inline-block}
+.pill.run{background:rgba(34,197,94,.16);color:#22c55e;border:1px solid rgba(34,197,94,.5)}
+.pill.run i{animation:blink 1.2s ease-in-out infinite}
+.pill.pau{background:rgba(245,158,11,.16);color:#f59e0b;border:1px solid rgba(245,158,11,.55)}
+.pill.stp{background:rgba(239,68,68,.16);color:#ef4444;border:1px solid rgba(239,68,68,.55)}
+.pill.stale{background:rgba(245,158,11,.2);color:#fbbf24;border:1px solid #f59e0b}
+#vBot .hide,.pill.hide{display:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.rbstale{background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.55);color:#fbbf24;border-radius:10px;padding:9px 12px;font-size:13.5px;font-weight:600;margin-top:8px}
+.rbinfo{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35);border-radius:10px;padding:8px 12px;font-size:12.5px;margin-top:8px}
+.rbdet{font-size:12.5px;color:var(--mut);margin-top:6px;overflow-wrap:anywhere}
+.ccards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cc{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;min-width:0;text-align:left;min-height:0;display:block;width:100%}
+.cc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.cc .t{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.cc .n{font-weight:750;font-size:16px}
+.cc .px{font-variant-numeric:tabular-nums;font-size:15px;margin-top:2px}
+.cc .m{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.35;overflow-wrap:anywhere}
+.tagL{background:rgba(34,197,94,.18);color:var(--up);border-radius:6px;padding:1px 7px;font-size:11px;font-weight:750}
+.tagC{background:rgba(138,147,166,.18);color:var(--mut);border-radius:6px;padding:1px 7px;font-size:11px;font-weight:750}
+#rbEq{height:220px}#rbPx{height:340px}
+#rbEq,#rbPx{width:100%;overflow:hidden}
+.flt{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.flt select{flex:1;min-width:0}
+.flt .pseg{flex:1.4;min-width:0}
+.ev{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;min-width:0}
+.ev .w{color:var(--mut);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums;min-width:74px}
+.ev .k{font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;background:var(--card2);color:var(--mut);white-space:nowrap;align-self:flex-start}
+.ev .k.fill{background:rgba(253,224,71,.16);color:#fde047}.ev .k.start,.ev .k.stop{background:rgba(59,130,246,.18);color:#93c5fd}
+.ev .x{min-width:0;overflow-wrap:anywhere}
+.togs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.togs label{display:flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:0 8px;min-height:34px;font-size:12.5px;cursor:pointer}
+.togs input{width:16px;height:16px;min-height:0;margin:0}
+.cinfo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}
+.cinfo div{background:var(--card2);border-radius:8px;padding:6px 8px;font-size:12px;color:var(--mut);min-width:0}
+.cinfo b{display:block;color:var(--tx);font-size:14px;font-variant-numeric:tabular-nums}
+
+.livebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:#22c55e;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.45);border-radius:999px;padding:3px 9px}
+.live i{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.live.tick i{animation:ping .9s ease-out}
+.live.off{color:#f59e0b;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.5)}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(34,197,94,.9)}100%{box-shadow:0 0 0 9px rgba(34,197,94,0)}}
+.flash{animation:fl .8s ease-out}
+@keyframes fl{0%{background:rgba(59,130,246,.35)}100%{background:transparent}}
+.rbpend{background:rgba(253,224,71,.1);border:1px solid rgba(253,224,71,.55);color:#fde047;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:10px}
+.cc .pd{margin-top:5px;font-size:11.5px;font-weight:700;color:#fde047}
+.cc .pd.hit,.rbhit{color:#fca5a5}
+.szp{display:inline-block;background:rgba(59,130,246,.16);color:#93c5fd;border:1px solid rgba(59,130,246,.45);border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}
+.slots{display:grid;grid-template-columns:1fr;gap:8px}
+.slot{background:var(--card2);border-radius:10px;padding:9px 10px;font-size:12.5px;min-width:0;overflow-wrap:anywhere;line-height:1.45}
+.slot.free{border:1px dashed var(--line);color:var(--mut)}
+.slot b{font-variant-numeric:tabular-nums}
+.rs{display:inline-block;font-size:9.5px;font-weight:800;padding:0 5px;border-radius:5px;background:#334155;color:#e2e8f0;margin-left:3px}
+.rs.TP{background:#14532d;color:#bbf7d0}.rs.SL{background:#7f1d1d;color:#fecaca}.rs.SWITCH{background:#1e3a8a;color:#bfdbfe}
+.skp{font-size:12px;padding:5px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.ev .k.skip{background:rgba(245,158,11,.16);color:#fbbf24}.ev .k.tpsl{background:rgba(239,68,68,.16);color:#fca5a5}.ev .k.resize{background:rgba(59,130,246,.18);color:#93c5fd}
+@media(min-width:760px){.slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:760px){.ccards{grid-template-columns:repeat(5,minmax(0,1fr))}#rbEq{height:260px}#rbPx{height:440px}.cinfo{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+  <div class="row"><h1>SSL Hybrid Live</h1><button id="refresh" aria-label="Refresh now">↻ Refresh</button></div>
+  <div class="meta row" style="margin-top:4px"><span id="upd">Loading…</span><span id="src"></span></div>
+  <div class="prog" id="prog"></div>
+</header>
+<main>
+  <div class="ctl">
+    <div class="seg" id="tfSeg"></div>
+    <div class="seg" id="dirSeg"></div>
+    <div class="seg" id="exSeg"></div>
+    <div class="cap"><label for="capIn">Starting capital (USD)</label><input id="capIn" type="number" inputmode="decimal" min="1" step="50" value="500"></div>
+    <div class="runbar"><button id="runBtn" aria-label="Re-run now (optional, it runs automatically)"><span class="spin"></span><span id="runLab">↻ Re-run</span></button><label class="auto"><input type="checkbox" id="autoIn" checked>Auto-refresh 60s</label></div>
+    <div class="runinfo"><span id="runInfo">Last run: –</span><span id="runSetup"></span></div>
+    <div class="stale" id="staleMsg">Settings changed, updating automatically…</div>
+  </div>
+  <div class="tabs"><button id="tabBot" class="on">Real bot</button><button id="tabSig">Signals</button><button id="tabDet">Coin detail</button><button id="tabPap">Paper (arrows)</button></div>
+
+  <section id="vBot" class="hide">
+    <div class="card">
+      <div class="rbtop"><span class="pill stp" id="rbPill"><i></i><span id="rbPillT">LOADING</span></span><span class="pill stale hide" id="rbStalePill">STALE</span><span class="meta" id="rbMode"></span></div>
+      <div class="rbdet" id="rbDetail"></div>
+      <div class="rbstale hide" id="rbStale"></div>
+      <div class="rbinfo"><b>Data from the 24/7 paper bot, updated every 10 min.</b> Positions as of the export <b id="rbExp">–</b> WIB <span id="rbAgo"></span>; this page re-checks for a new export every 60 s. <b>P&amp;L is marked live</b> in your browser from Binance prices every 5 s. Paper trading only: no exchange keys, no real orders.</div>
+      <div class="meta" style="margin-top:6px">The timeframe and pause/resume are changed by messaging the bot in chat (this public page is read-only).</div>
+      <div id="rbErr" class="err"></div>
+    </div>
+    <div class="card">
+      <div class="livebar"><span class="live" id="rbLive"><i></i><span id="rbLiveT">CONNECTING</span></span><span class="meta" id="rbLiveAt">connecting to Binance…</span></div>
+      <div class="phead"><div><div class="meta">Paper balance · live mark</div><div class="big" id="rbBal">–</div><div id="rbPnl" class="meta"></div></div>
+      <div class="cd">Next <span id="rbTf">–</span> bar close<br><b id="rbCd">–</b><div id="rbCdAt"></div></div></div>
+      <div class="kpis" id="rbKpis" style="margin-top:10px"></div><div class="meta" id="rbAsOf" style="margin-top:8px"></div>
+    </div>
+    <div class="card"><div class="h3">Equity vs buy &amp; hold</div><div class="legend"><span><i class="dot" style="background:#22c55e"></i>Bot equity (USD)</span><span><i class="dot" style="background:#8a93a6"></i>Buy &amp; hold same coins</span></div><div id="rbEq"></div></div>
+    <div class="rbpend hide" id="rbPend"></div>
+    <div class="card hide" id="rbPoolC"><div class="h3">Pool <span class="meta" id="rbPoolH"></span></div><div class="slots" id="rbSlots"></div><div class="meta" id="rbPoolN" style="margin-top:6px"></div><div class="h3" style="margin-top:10px;font-size:14px">Skipped arrows <span class="meta">· slots full, not queued</span></div><div id="rbSkip"></div></div>
+    <div class="card"><div class="h3">Coins <span class="meta">· live prices · positions as of <span class="asof">–</span> · tap a coin for its chart</span></div><div class="ccards" id="rbCards"></div></div>
+    <div class="card" id="rbChartCard"><div class="h3">Chart · <span id="rbPxT">–</span></div><div class="pseg cseg" id="rbPxSeg"></div>
+      <div class="togs" id="rbTogs"></div>
+      <div class="legend"><span><i class="dot" style="background:#3b82f6"></i>Baseline</span><span><i class="dot" style="background:#64748b"></i>Channel</span><span><i class="dot" style="background:#a78bfa"></i>Exit line</span><span><i class="dot" style="background:#f59e0b"></i>SSL1</span><span><i class="dot" style="background:#22d3ee"></i>SSL2</span><span><b class="pos">▲</b>/<b class="neg">▼</b> Exit Arrows · <b style="color:#fde047">B</b>/<b style="color:#fde047">S</b> the bot's paper fills</span></div>
+      <div id="rbPx"></div><div class="cinfo" id="rbCinfo"></div><div class="meta" id="rbPxNote" style="margin-top:6px"></div></div>
+    <div class="card"><div class="h3">Open positions <span class="meta">· as of <span class="asof">–</span> WIB, P&amp;L live</span></div><div class="tblwrap"><table id="rbPos"><thead><tr><th>Coin<span class="sub">size</span></th><th>Entry<span class="sub">time WIB</span></th><th>Now<span class="sub">net if sold</span></th><th>TP<span class="sub">SL</span></th><th>Unreal. $<span class="sub">%</span></th></tr></thead><tbody></tbody></table></div><div class="meta" id="rbPosNote"></div></div>
+    <div class="card"><div class="h3">Trade log</div>
+      <div class="flt"><select id="rbFCoin" aria-label="Filter by coin"></select><div class="pseg" id="rbFRes"></div></div>
+      <div class="tblwrap"><table id="rbTr"><thead><tr><th>Closed WIB<span class="sub">opened</span></th><th>Coin</th><th>Entry<span class="sub">exit</span></th><th>$ P&amp;L<span class="sub">% · exit</span></th></tr></thead><tbody></tbody></table></div><div class="meta" id="rbTrNote"></div></div>
+    <div class="card"><div class="h3">Bot events <span class="meta">· latest 30</span></div><div id="rbEv"></div></div>
+    <div class="card"><div class="meta" id="rbRules"></div></div>
+  </section>
+
+  <section id="vSig" class="hide">
+    <div class="card">
+      <div class="meta" style="margin-bottom:6px">State on the last <b>closed</b> bar. Highlighted rows (orange dot) flipped within the last 3 bars; Bars = bars since the last baseline signal (↑ long, ↓ short). Tap a header to sort, tap a row for detail. Backtest PF/return/End $ use the last 1000 bars, starting from your capital.</div>
+      <div class="tblwrap"><table id="sigT"><thead><tr>
+        <th data-k="coin">Coin<span class="sub">price</span></th><th data-k="state">State</th><th data-k="since">Bars</th><th data-k="pf">PF</th><th data-k="ret">Return<span class="sub">B&amp;H</span></th><th data-k="end">End $<span class="sub">B&amp;H $</span></th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="sigErr" class="err"></div>
+    </div>
+  </section>
+
+  <section id="vDet" class="hide">
+    <div class="card">
+      <div class="sym"><select id="coinSel" aria-label="Coin"></select><input id="symIn" placeholder="e.g. WIF" aria-label="Any symbol" autocapitalize="characters"><button id="symGo">Go</button></div>
+      <div id="detHead" style="margin-top:10px;font-weight:650"></div>
+      <div id="detErr" class="err"></div>
+    </div>
+    <div class="card">
+      <div class="legend"><span><i class="dot" style="background:#3b82f6"></i>Baseline HMA60</span><span><i class="dot" style="background:#64748b"></i>Channel ±0.2·EMA60(TR)</span><span><i class="dot" style="background:#a78bfa"></i>Exit SSL HMA15</span><span><i class="dot" style="background:#f59e0b"></i>SSL1</span><span><i class="dot" style="background:#22d3ee"></i>SSL2</span><span>L/S baseline signals · light ▲/▼ Exit Arrows · ■ exits</span></div>
+      <div id="pc"></div>
+    </div>
+    <div class="card">
+      <div class="legend"><span><i class="dot" style="background:#22c55e"></i>Strategy</span><span><i class="dot" style="background:#8a93a6"></i>Buy &amp; hold</span><span>balance in USD, log scale, fees incl.</span></div>
+      <div id="ec"></div>
+    </div>
+    <div class="card"><div class="kpis" id="kpis"></div><div class="meta" id="detNote" style="margin-top:8px"></div></div>
+  </section>
+
+  <section id="vPap" class="hide">
+    <div class="sim"><b>BROWSER SIMULATION: this is NOT the 24/7 paper bot's actual trades or balance.</b> This page runs its own paper simulation in your browser, recomputed on every page load from the start time below using Binance public price history, so its numbers can differ from the bot's (the bot switched rules and timeframes during its run; this page applies one rule from the start). No exchange keys are used and no orders are placed anywhere. Default: <b>Exit Arrows, long-only</b>, $500 split across ZEC, NEAR, PEPE, SOL, XRP; BUY at the next bar open after a ▲ up arrow (close crosses above the Exit SSL HMA15), sell to cash after a ▼ down arrow. Indicator = Mihkel00 SSL Hybrid, TradingView Pine v6 (WMA ATR smoothing), identical to the bot's ssl_core.py. Fees 0.1% per side.</div>
+    <div class="card">
+      <div class="pform">
+        <label>Start time (WIB)<input id="pStart" type="datetime-local" step="60"></label>
+        <label>Capital (USD)<input id="pCap" type="number" inputmode="decimal" min="1" step="50"></label>
+        <label class="full" style="grid-column:auto">Trade<select id="pMode"></select></label>
+        <label>Timeframe<div class="pseg" id="pTfSeg"></div></label>
+        <label>Rule<select id="pRule"></select></label>
+        <label style="justify-content:flex-end"><span>&nbsp;</span><button id="pReset">⟲ Reset / restart now</button></label>
+        <div class="full"><div class="chips" id="pChips"></div></div>
+      </div>
+      <div class="meta" id="pSetup" style="margin-top:8px"></div>
+      <div id="pErr" class="err"></div>
+    </div>
+    <div class="newsig" id="pNew"></div>
+    <div class="card">
+      <div class="simtag">Browser simulation · not the bot's actual trades</div>
+      <div class="phead"><div><div class="meta">Simulated paper balance (marked to the live price)</div><div class="big" id="pBal">–</div><div id="pPnl" class="meta"></div></div>
+      <div class="cd">Next <span id="pCdTf">15m</span> bar close in<br><b id="pCd">–</b><div id="pCdAt"></div></div></div>
+    </div>
+    <div class="card"><div class="h3">Coins · Exit Arrow state</div><div class="tblwrap"><table id="pCoins"><thead><tr><th>Coin<span class="sub">price</span></th><th>Position<span class="sub">Exit SSL</span></th><th>Last arrow<span class="sub">bar open WIB</span></th><th>Value $<span class="sub">P&amp;L</span></th></tr></thead><tbody></tbody></table></div><div class="meta" id="pCoinsNote"></div></div>
+    <div class="card"><div class="h3">Chart · <span id="ppxTitle"></span></div><div class="pseg cseg" id="ppxSeg"></div>
+      <div class="legend"><span><i class="dot" style="background:#3b82f6"></i>Baseline HMA60</span><span><i class="dot" style="background:#a78bfa"></i>Exit SSL HMA15</span><span><i class="dot" style="background:#f59e0b"></i>SSL1</span><span><i class="dot" style="background:#22d3ee"></i>SSL2 (JMA5)</span><span><b class="pos">▲</b>/<b class="neg">▼</b> Exit Arrows · <b style="color:#fde047">B</b>/<b style="color:#fde047">S</b> paper fills</span></div>
+      <div id="ppx"></div><div class="meta" id="ppxNote"></div></div>
+    <div class="card"><div class="h3">Open positions</div><div class="tblwrap"><table id="pPos"><thead><tr><th>Coin</th><th>Entry<span class="sub">time WIB</span></th><th>Now</th><th>Unreal. $<span class="sub">%</span></th><th>Bars</th></tr></thead><tbody></tbody></table></div><div class="meta" id="pPosNote"></div></div>
+    <div class="card"><div class="legend"><span><i class="dot" style="background:#22c55e"></i>Paper equity since start (USD)</span><span><i class="dot" style="background:#8a93a6"></i>Buy &amp; hold same coins</span></div><div id="ppc"></div></div>
+    <div class="card"><div class="h3">Trade log</div><div class="tblwrap"><table id="pLog"><thead><tr><th>Time WIB</th><th>Coin</th><th>Side</th><th>Price</th><th>$ P&amp;L<span class="sub">fee</span></th></tr></thead><tbody></tbody></table></div><div class="meta" id="pLogNote"></div></div>
+  </section>
+
+  <div class="note">SSL Hybrid (Mihkel00) at default settings: Baseline HMA 60 with ±0.2×EMA60 true-range channel, Exit SSL HMA 15 of highs/lows. Long when close crosses above the upper channel, short when it crosses below the lower one. Signals on bar close, filled at next open, 0.1% fee per side, no leverage. Dollar figures assume your starting capital is fully reinvested (compounded) into each trade. Data: Binance public API (in-browser), auto-refresh every 60 s. <b>Historical backtest and live indicator readout only, not financial advice.</b></div>
+</main>
+
+<script>
+// ===== CORE-START (indicator + backtest; mirrors ssl_hybrid_backtest.py) =====
+const FEE = 0.001, WARMUP = 120;
+const BARS_PER_YEAR = {"15m": 365*96, "1h": 365*24, "4h": 365*6, "1d": 365, "1w": 52.14};
+function wma(x, n) {
+  const out = new Array(x.length).fill(NaN); if (x.length < n) return out;
+  const ws = n*(n+1)/2;
+  for (let i = n-1; i < x.length; i++) { let s = 0; for (let k = 0; k < n; k++) s += x[i-n+1+k]*(k+1); out[i] = s/ws; }
+  return out;
+}
+function hma(x, n) {
+  const a1 = wma(x, Math.floor(n/2)), a2 = wma(x, n);
+  const a = x.map((_, i) => 2*a1[i] - a2[i]);
+  const m = Math.round(Math.sqrt(n));
+  const out = new Array(x.length).fill(NaN);
+  const idx = a.findIndex(v => !isNaN(v));
+  if (idx >= 0 && x.length - idx >= m) { const w = wma(a.slice(idx), m); for (let i = 0; i < w.length; i++) out[idx+i] = w[i]; }
+  return out;
+}
+function ema(x, n) { const al = 2/(n+1); const o = new Array(x.length); o[0] = x[0]; for (let i = 1; i < x.length; i++) o[i] = al*x[i] + (1-al)*o[i-1]; return o; }
+function jma(src, len = 5, phase = 3, power = 1) {   // Pine "JMA" branch of ma() (everget), nz() seeds = 0
+  const pr = phase < -100 ? 0.5 : phase > 100 ? 2.5 : phase/100 + 1.5, beta = 0.45*(len-1)/(0.45*(len-1)+2), al = Math.pow(beta, power);
+  let e0 = 0, e1 = 0, e2 = 0, j = 0; const out = new Array(src.length);
+  for (let i = 0; i < src.length; i++) { const s = src[i]; e0 = (1-al)*s + al*e0; e1 = (s-e0)*(1-beta) + beta*e1; e2 = (e0 + pr*e1 - j)*Math.pow(1-al, 2) + al*al*e2; j = e2 + j; out[i] = j; }
+  return out;
+}
+function sslState(c, mh, ml) {
+  const st = new Array(c.length); let s = 0;
+  for (let i = 0; i < c.length; i++) { if (!isNaN(mh[i])) { if (c[i] > mh[i]) s = 1; else if (c[i] < ml[i]) s = -1; } st[i] = s; }
+  return { st, line: st.map((v, i) => v < 0 ? mh[i] : ml[i]) };
+}
+// Mirrors ssl_core.indicator = TradingView "SSL Hybrid" (Mihkel00, Pine v6) at default inputs.
+function indicator(d) {
+  const { o, h, l, c } = d, n = c.length;
+  const base = hma(c, 60);
+  const tr = c.map((_, i) => i === 0 ? h[0]-l[0] : Math.max(h[i]-l[i], Math.abs(h[i]-c[i-1]), Math.abs(l[i]-c[i-1])));
+  const rm = ema(tr, 60);
+  const upper = base.map((b, i) => b + 0.2*rm[i]), lower = base.map((b, i) => b - 0.2*rm[i]);
+  const ex = sslState(c, hma(h, 15), hma(l, 15));
+  const s1 = sslState(c, hma(h, 60), hma(l, 60)), s2 = sslState(c, jma(h), jma(l));
+  const color = c.map((v, i) => v > upper[i] ? 1 : v < lower[i] ? -1 : 0);
+  const atr = wma(tr, 14);   // ATR 14, WMA smoothing (TradingView v6 default)
+  const L = new Array(n).fill(false), S = new Array(n).fill(false), XL = new Array(n).fill(false), XS = new Array(n).fill(false);
+  const arrow = new Array(n).fill(0), arrowSt = new Array(n).fill(0); let ast = 0;
+  for (let i = 1; i < n; i++) {
+    L[i] = c[i] > upper[i] && c[i-1] <= upper[i-1];
+    S[i] = c[i] < lower[i] && c[i-1] >= lower[i-1];
+    XL[i] = c[i] < ex.line[i] && c[i-1] >= ex.line[i-1];   // crossover(sslExit, close): DOWN arrow
+    XS[i] = c[i] > ex.line[i] && c[i-1] <= ex.line[i-1];   // crossover(close, sslExit): UP arrow
+    arrow[i] = XS[i] ? 1 : XL[i] ? -1 : 0; if (arrow[i]) ast = arrow[i]; arrowSt[i] = ast;
+  }
+  const atrUp = c.map((v, i) => v + atr[i]), atrLo = c.map((v, i) => v - atr[i]);
+  const diamond = c.map((v, i) => Math.abs(v - o[i]) > atr[i] && atrUp[i] > base[i] && atrLo[i] < base[i]);
+  const buyAtr = c.map((v, i) => v - 0.9*atr[i] < s2.line[i] && v > base[i] && v > s2.line[i]);
+  const sellAtr = c.map((v, i) => v + 0.9*atr[i] > s2.line[i] && v < base[i] && v < s2.line[i]);
+  return { base, upper, lower, exLine: ex.line, exSt: ex.st, color, L, S, XL, XS,
+           ssl1: s1.line, ssl1St: s1.st, ssl2: s2.line, ssl2St: s2.st, atr, atrUp, atrLo, arrow, arrowSt, diamond, buyAtr, sellAtr };
+}
+function backtest(d, ind, direction, exitv) {
+  const { o, c } = d, n = c.length;
+  let pos = 0, target = 0, cash = 1, units = 0, entryEq = null;
+  const eq = new Array(n).fill(1), trades = [], events = [];
+  const shortVal = (cash, units, px) => Math.max(2*cash - units*px, 0);
+  for (let i = WARMUP; i < n; i++) {
+    if (i > WARMUP && target !== pos) {
+      const px = o[i];
+      if (pos !== 0) { let val = pos > 0 ? units*px : shortVal(cash, units, px); val *= (1-FEE); trades.push(val/entryEq - 1); events.push([i, "x", pos]); cash = val; pos = 0; }
+      if (target !== 0) { entryEq = cash; const ca = cash*(1-FEE); units = ca/px; cash = ca; pos = target; events.push([i, target > 0 ? "L" : "S", target]); }
+    }
+    eq[i] = pos > 0 ? units*c[i] : pos < 0 ? shortVal(cash, units, c[i]) : cash;
+    const ls = ind.L[i], ss = ind.S[i]; let t = pos;
+    if (ls) t = 1; else if (ss) t = direction === "ls" ? -1 : 0;
+    if (exitv === "exitssl") {
+      if (pos > 0 && ind.XL[i] && !ls) t = !ss ? 0 : t;
+      if (pos < 0 && ind.XS[i] && !ss) t = !ls ? 0 : t;
+    }
+    target = t;
+  }
+  const openRet = pos !== 0 ? eq[n-1]/entryEq - 1 : null;
+  return { eq, trades, openRet, pos, target, events };
+}
+function metrics(d, bt, tf) {
+  const { eq, trades, openRet } = bt, { c, o, t } = d, n = c.length;
+  const e = eq.slice(WARMUP), allt = trades.concat(openRet !== null ? [openRet] : []);
+  const years = (t[n-1] - t[WARMUP]) / (365.25*86400000);
+  const tot = e[e.length-1]/e[0] - 1, bh = c[n-1]/o[WARMUP] - 1;
+  const cagr = years > 0 && e[e.length-1] > 0 ? Math.pow(e[e.length-1]/e[0], 1/years) - 1 : -1;
+  const dd = a => { let pk = -Infinity, m = 0; for (const v of a) { pk = Math.max(pk, v); m = Math.min(m, v/pk - 1); } return m; };
+  const shp = a => { const r = []; for (let i = 1; i < a.length; i++) r.push((a[i]-a[i-1])/a[i-1]); const mu = r.reduce((s, v) => s+v, 0)/r.length; const sd = Math.sqrt(r.reduce((s, v) => s+(v-mu)**2, 0)/r.length); return sd > 0 ? mu/sd*Math.sqrt(BARS_PER_YEAR[tf]) : 0; };
+  const w = allt.filter(x => x > 0), Ls = allt.filter(x => x <= 0), sw = w.reduce((s, v) => s+v, 0), sl = Ls.reduce((s, v) => s+v, 0);
+  const pf = Ls.length && sl < 0 ? sw/-sl : (w.length ? 99 : 0);
+  const mdd = dd(e);
+  return { total_return: tot, bh_return: bh, cagr, max_dd: mdd, bh_max_dd: dd(c.slice(WARMUP)), win_rate: allt.length ? w.length/allt.length : 0,
+    profit_factor: pf, trades: allt.length, sharpe: shp(e), bh_sharpe: shp(c.slice(WARMUP)), years, calmar: mdd < 0 ? cagr/Math.abs(mdd) : 0 };
+}
+// ===== CORE-END =====
+if (typeof module !== "undefined") module.exports = { indicator, backtest, metrics, WARMUP };
+</script>
+
+<script>
+/* ---- "Real bot" tab ----
+   ./bot.json = the 24/7 paper bot's state, pushed from the box every 10 min (re-fetched here every 60 s).
+   Between exports the page marks the bot's exported positions to live Binance prices every 5 s using the bot's own
+   formula (paper_bot.marked): value = units*price (long) else value_close; unreal = value - cost; bh = alloc*price/bh_c0.
+   It also recomputes the Exit Arrows on bars that closed after the export (same Pine v6 indicator() as the simulation)
+   and shows a "pending" hint only; it never simulates trades into the bot's balance. */
+window.RB = (function () {
+  const $ = id => document.getElementById(id);
+  const STALE_MIN = 25, TFMS = { "15m": 9e5, "1h": 36e5, "4h": 144e5 }, PRICE_MS = 5000;
+  const PX_SRC = [["api.binance.com", "https://api.binance.com/api/v3"], ["data-api.binance.vision", "https://data-api.binance.vision/api/v3"]];
+  const WIBF = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+  const WIBH = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false });
+  const WIBS = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const num = v => typeof v === "number" && isFinite(v);
+  const usd = (v, sign) => !num(v) ? "–" : (v < 0 ? "−$" : (sign && v > 0 ? "+$" : "$")) + Math.abs(v).toFixed(2);
+  const pct = (v, d = 2) => !num(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v * 100).toFixed(d) + "%";
+  const px = v => !num(v) ? "–" : v >= 1000 ? v.toFixed(2) : v >= 1 ? v.toFixed(4).replace(/0+$/, "").replace(/\.$/, "") : v < 0.001 ? v.toPrecision(4) : v.toPrecision(5);
+  const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+  const wib = ms => num(ms) ? WIBF.format(new Date(ms)) : "–";
+  const T = ms => Math.floor(ms / 1000) + 7 * 3600;   // charts render UTC; shift so the axis reads WIB
+  const prec = p => !num(p) ? 2 : p < 0.001 ? 10 : p < 1 ? 5 : p < 100 ? 3 : 2;
+  const onBot = () => document.body.classList.contains("onBot");
+  let D = null, V = null, coin = localStorage.getItem("rbCoin") || null, fCoin = "ALL", fRes = "all", eqC, eqS, bhS, pxC, pxS = {}, lastFetch = 0, loading = false;
+  let LP = {}, lpT = 0, lpSrc = "", lpIdx = 0, lpBusy = false, lpErr = "", pend = {}, pendT = 0;
+  const TOG = JSON.parse(localStorage.getItem("rbTogs") || '{"chan":true,"base":true,"exit":true,"ssl1":false,"ssl2":false,"arrows":true,"fills":true}');
+  const chartOpt = () => ({ autoSize: true, layout: { background: { color: "#141923" }, textColor: "#8a93a6", fontSize: 11 }, grid: { vertLines: { color: "#1e2533" }, horzLines: { color: "#1e2533" } }, rightPriceScale: { borderColor: "#262e3f" }, timeScale: { borderColor: "#262e3f", timeVisible: true, secondsVisible: false }, crosshair: { mode: 0 }, handleScroll: { vertTouchDrag: false } });
+
+  // ---------- data ----------
+  async function load() {
+    if (loading) return; loading = true;
+    try {
+      const r = await fetch("./bot.json?t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status + " fetching bot.json");
+      const nd = await r.json(), changed = !D || nd.exported_ms !== D.exported_ms;
+      D = nd; lastFetch = Date.now(); $("rbErr").textContent = "";
+      if (changed) { V = view(); render(); arrows(); } else header();
+      if (!lpT) prices();
+    } catch (e) {
+      $("rbErr").textContent = "Could not load the bot's data (" + e.message + "). Showing the last loaded copy" + (D ? "." : ": none yet.");
+      if (D) header();
+    } finally { loading = false; }
+  }
+
+  // the bot's exported state marked to live prices (exact paper_bot.marked() formula); falls back to the export's own mark
+  function view() {
+    const v = Object.assign({}, D), live = lpT > 0, fee = num(D.fee) ? D.fee : 0.001;
+    let bal = D.pool && num(D.pool.cash) ? D.pool.cash : 0, bh = 0;
+    v.coins = D.coins.map(c0 => {
+      const c = Object.assign({}, c0), k = c0.calc || {}, p = live && num(LP[c0.symbol]) ? LP[c0.symbol] : null;
+      if (p != null) {
+        const long = num(k.units) && k.units > 0;
+        c.price = p; c.value = long ? k.units * p : k.value_close;
+        c.bh_value = num(k.bh_c0) && k.bh_c0 > 0 ? k.alloc * p / k.bh_c0 : k.bh_value_close;
+        c.unreal = long ? c.value - k.cost : null; c.unreal_pct = long ? c.value / k.cost - 1 : null;
+        if (num(c.exit_line)) { c.vs_exit_pct = p / c.exit_line - 1; c.above_exit = p > c.exit_line; }
+        c.live = true;
+      }
+      if (num(k.units) && k.units > 0 && num(c.price)) {   // TP/SL: net P&L if sold now (entry fee in cost, 0.1% exit fee)
+        c.net = k.units * c.price * (1 - fee) - k.cost;
+        c.to_tp = num(k.tp_px) ? k.tp_px / c.price - 1 : null; c.to_sl = num(k.sl_px) ? k.sl_px / c.price - 1 : null;
+        c.hit = num(k.sl_px) && c.price <= k.sl_px ? "SL" : num(k.tp_px) && c.price >= k.tp_px ? "TP" : null;
+      }
+      bal += num(c.value) ? c.value : 0; bh += num(c.bh_value) ? c.bh_value : 0;
+      return c;
+    });
+    if (live && v.coins.every(c => c.live)) {
+      v.balance = bal; v.bh = bh; v.pnl = bal - D.capital; v.pnl_pct = bal / D.capital - 1; v.bh_pct = bh / D.capital - 1; v.vs_bh = bal - bh; v.live = true;
+    }
+    v.open = (D.open || []).map(o => { const c = v.coins.find(x => x.coin === o.coin); return c ? Object.assign({}, o, c.live ? { price: c.price, unreal: c.unreal, unreal_pct: c.unreal_pct } : {}, { net: c.net, to_tp: c.to_tp, to_sl: c.to_sl, hit: c.hit }) : o; });
+    return v;
+  }
+
+  async function prices() {
+    if (!D || lpBusy) return; lpBusy = true;
+    const syms = JSON.stringify(D.coins.map(c => c.symbol || c.coin + "USDT"));
+    try {
+      let ok = false;
+      for (let k = 0; k < PX_SRC.length && !ok; k++) {
+        const i = (lpIdx + k) % PX_SRC.length, ac = new AbortController(), to = setTimeout(() => ac.abort(), 4000);
+        try {
+          const r = await fetch(`${PX_SRC[i][1]}/ticker/price?symbols=${encodeURIComponent(syms)}`, { signal: ac.signal, cache: "no-store" });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          const a = await r.json(); a.forEach(x => LP[x.symbol] = +x.price);
+          lpT = Date.now(); lpSrc = PX_SRC[i][0]; lpIdx = i; lpErr = ""; ok = true;
+        } catch (e) { lpErr = PX_SRC[i][0] + ": " + (e.name === "AbortError" ? "timeout" : e.message); }
+        finally { clearTimeout(to); }
+      }
+      if (ok) { V = view(); numbers(); cards(); positions(); poolCard(); cinfo(); equityLive(); livePriceLine(); const l = $("rbLive"); l.classList.remove("tick"); void l.offsetWidth; l.classList.add("tick"); }
+      liveBadge();
+    } finally { lpBusy = false; }
+  }
+  function liveBadge() {
+    const age = lpT ? (Date.now() - lpT) / 1000 : Infinity, ok = age < 20;
+    $("rbLive").className = "live" + (ok ? "" : " off"); $("rbLiveT").textContent = ok ? "LIVE" : lpT ? "PRICES LAGGING" : "OFFLINE";
+    $("rbLiveAt").textContent = lpT ? `prices ${WIBS.format(new Date(lpT))} WIB (${Math.round(age)} s ago) · ${lpSrc}${!ok && lpErr ? " · " + lpErr : ""}` : (lpErr ? "Binance prices unavailable (" + lpErr + "), showing the export's mark" : "connecting to Binance…");
+  }
+
+  // Exit Arrows on bars that closed after the export: hint only, never traded into the balance
+  async function arrows() {
+    if (!D || typeof indicator !== "function" || D.mode !== "arrow_long") return;
+    const tf = D.tf, tb = TFMS[tf] || 9e5; pendT = Date.now(); const out = {};
+    await Promise.all(D.coins.map(async c => {
+      for (const [, base] of PX_SRC) {
+        try {
+          const r = await fetch(`${base}/klines?symbol=${c.symbol}&interval=${tf}&limit=600`, { cache: "no-store" }); if (!r.ok) throw new Error(r.status);
+          const rows = (await r.json()).filter(x => Number(x[6]) < Date.now());
+          const d = { t: rows.map(x => Number(x[0])), o: rows.map(x => +x[1]), h: rows.map(x => +x[2]), l: rows.map(x => +x[3]), c: rows.map(x => +x[4]) };
+          const ind = indicator(d), n = d.t.length; let hit = null, chk = 0, ok = 0;
+          for (let i = n - 1; i >= 0 && d.t[i] > (c.bar_ms || 0); i--) if (ind.arrow[i] && !hit) hit = { dir: ind.arrow[i] > 0 ? "up" : "down", t: d.t[i] };
+          // self-check against the bot's own arrows on the overlapping bars
+          const au = new Set((c.chart && c.chart.au) || []), ad = new Set((c.chart && c.chart.ad) || []), t0 = c.chart && c.chart.t ? c.chart.t[0] : Infinity;
+          for (let i = 0; i < n; i++) if (d.t[i] >= t0 && d.t[i] <= c.bar_ms) { chk++; if ((ind.arrow[i] > 0) === au.has(d.t[i]) && (ind.arrow[i] < 0) === ad.has(d.t[i])) ok++; }
+          const long = c.pos === "long";
+          let act = null;
+          if (hit && hit.dir === "up" && !long) act = "BUY"; else if (hit && hit.dir === "down" && long) act = "SELL";
+          out[c.coin] = { hit, act, lastClosed: d.t[n - 1], match: chk ? ok / chk : null, nextOpen: d.t[n - 1] + 2 * tb };
+          return;
+        } catch (e) { }
+      }
+    }));
+    pend = out; window.__rbArrows = out; pendBanner(); cards();
+  }
+  function pendBanner() {
+    const a = Object.entries(pend).filter(([, p]) => p.act);
+    $("rbPend").classList.toggle("hide", !a.length);
+    $("rbPend").innerHTML = a.length ? `<b>⏳ Pending (from bars closed after the export):</b><br>` + a.map(([c, p]) => `${esc(c)}: ${p.hit.dir === "up" ? "▲ up" : "▼ down"} arrow on the ${esc(D.tf)} bar opened ${WIBH.format(new Date(p.hit.t))} WIB → the bot will <b>${p.act}</b> at the next open (shows here after its next export).`).join("<br>") + `<div class="meta" style="color:inherit;opacity:.8;margin-top:4px">Hint only: computed in your browser with the same indicator; the balance above is not changed by it.</div>` : "";
+  }
+
+  // ---------- render ----------
+  function header() {
+    const st = (D.status || "STOPPED").toUpperCase(), ageMin = (Date.now() - D.exported_ms) / 60000, stale = ageMin > STALE_MIN;
+    $("rbPill").className = "pill " + (st === "RUNNING" ? "run" : st === "PAUSED" ? "pau" : "stp"); $("rbPillT").textContent = st;
+    $("rbStalePill").classList.toggle("hide", !stale); $("rbStale").classList.toggle("hide", !stale);
+    if (stale) $("rbStale").textContent = `STALE: the last export is ${ageMin >= 120 ? (ageMin / 60).toFixed(1) + " h" : Math.round(ageMin) + " min"} old (expected every 10 min). The box or its publisher may be offline, so the status and positions below may be out of date (prices are still live).`;
+    $("rbMode").innerHTML = `${esc(D.mode)} · <b>${esc(D.tf)}</b> · since ${esc(D.start_wib)} WIB` + (D.pool ? ` <span class="szp">Max positions ${D.pool.max_positions} · pool sizing · ${D.pool.slots_used}/${D.pool.max_positions}</span>` : "");
+    let det = st === "RUNNING" ? "Bot alive" + (num(D.hb_age_s) ? `, heartbeat ${Math.round(D.hb_age_s)} s before the export` : "") : (D.status_detail || "");
+    if (D.paused) det = `Paused since ${D.paused.since_wib} WIB: ${D.paused.reason}. No new entries; exits still follow the rules.`;
+    $("rbDetail").textContent = det + (D.heartbeat_wib ? ` (last heartbeat ${D.heartbeat_wib.slice(11, 19)} WIB)` : "");
+    $("rbExp").textContent = wib(D.exported_ms); $("rbAgo").textContent = `(${ageMin < 1 ? "<1" : Math.round(ageMin)} min ago)`;
+    document.querySelectorAll("#vBot .asof").forEach(e => e.textContent = WIBH.format(new Date(D.positions_as_of_ms || D.exported_ms)));
+    const tb = TFMS[D.tf] || 9e5, now = Date.now(), nx = Math.ceil((now + 1) / tb) * tb, s = Math.round((nx - now) / 1000);
+    $("rbTf").textContent = D.tf; $("rbCd").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; $("rbCdAt").textContent = "at " + WIBH.format(new Date(nx)) + " WIB";
+    if (onBot()) { $("upd").textContent = "Real bot · exported " + wib(D.exported_ms) + " WIB"; $("src").textContent = V && V.live ? "· live P&L" : ""; }
+    liveBadge();
+  }
+  function render() { header(); numbers(); equity(); cards(); poolCard(); if (!coin || !D.coins.some(c => c.coin === coin)) coin = D.coins[0] && D.coins[0].coin; coinChart(false); positions(); filters(); trades(); events(); rules(); pendBanner(); }
+
+  function numbers() {
+    $("rbBal").textContent = usd(V.balance); $("rbBal").classList.remove("flash"); void $("rbBal").offsetWidth; if (V.live) $("rbBal").classList.add("flash");
+    $("rbPnl").innerHTML = `<span class="${cls(V.pnl)}" id="rbPnlV">${usd(V.pnl, 1)} (${pct(V.pnl_pct, 3)})</span> on ${usd(D.capital)} · vs buy &amp; hold <span class="${cls(V.vs_bh)}">${usd(V.vs_bh, 1)}</span>`;
+    const unr = V.open.reduce((a, p) => a + (p.unreal || 0), 0);
+    const k = [["Buy & hold" + (V.live ? " · live" : ""), usd(V.bh), pct(V.bh_pct), cls(V.bh_pct)], ["Unrealised · live", usd(unr, 1), `${V.open.length} open position${V.open.length === 1 ? "" : "s"}`, cls(unr)],
+      ["Realised P&L", usd(D.realised, 1), "closed trades", cls(D.realised)], ["Fees paid", usd(D.fees), "0.1% per side", ""],
+      ["Win rate", num(D.win_rate) ? (D.win_rate * 100).toFixed(0) + "%" : "–", `${D.wins ?? 0} W / ${D.losses ?? 0} L`, ""], ["Trades", String(D.n_trades ?? 0), "closed round trips", ""],
+      ...(D.pool ? [["Sizing", "Max " + D.pool.max_positions + " · pool", (num(D.pool.tp_usd) || num(D.pool.sl_usd)) ? `TP +$${D.pool.tp_usd} / SL −$${D.pool.sl_usd} net` : "no TP/SL", ""],
+        ["Slots used", D.pool.slots_used + " / " + D.pool.max_positions, D.pool.free_slots ? `next trade ${usd(D.pool.next_trade_size)}` : "full: new arrows skipped", ""]] : []),
+      ["Max drawdown", pct(D.max_dd_pct), usd(-Math.abs(D.max_dd_usd || 0)) + " (bar closes)", "neg"], ["Profit factor", num(D.profit_factor) ? D.profit_factor.toFixed(2) : "–", `exposure ${num(D.exposure_pct) ? (D.exposure_pct * 100).toFixed(0) + "%" : "–"}`, ""]];
+    $("rbKpis").innerHTML = k.map(([l, v, s, c]) => `<div class="kpi"><div class="l">${esc(l)}</div><div class="v ${c}">${esc(v)}</div><div class="s">${esc(s)}</div></div>`).join("");
+    $("rbAsOf").innerHTML = `Positions, cash, realised P&amp;L and stats as of the export ${esc(wib(D.positions_as_of_ms || D.exported_ms))} WIB (bot's mark then: ${usd(D.balance)}). ` + (V.live ? "Balance, unrealised and buy &amp; hold above are re-marked to live Binance prices every 5 s." : "Live prices not available yet: showing the export's mark.");
+  }
+
+  function equity() {
+    if (!eqC) { eqC = LightweightCharts.createChart($("rbEq"), Object.assign(chartOpt(), { localization: { priceFormatter: v => "$" + v.toFixed(2) } })); eqS = eqC.addLineSeries({ color: "#22c55e", lineWidth: 2 }); bhS = eqC.addLineSeries({ color: "#8a93a6", lineWidth: 1, lineStyle: 2 }); }
+    const seen = new Set(), e = [], b = [];
+    (D.equity || []).forEach(p => { const t = T(p.t); if (seen.has(t)) return; seen.add(t); if (num(p.eq)) e.push({ time: t, value: p.eq }); if (num(p.bh)) b.push({ time: t, value: p.bh }); });
+    eqS.setData(e); bhS.setData(b); equity.lastT = e.length ? e[e.length - 1].time : 0; eqC.timeScale().fitContent(); equityLive();
+  }
+  function equityLive() {   // append the live mark (one point per 5 s price update)
+    if (!eqS || !V || !V.live) return; const t = T(lpT); if (t <= (equity.lastT || 0)) return;
+    eqS.update({ time: t, value: V.balance }); bhS.update({ time: t, value: V.bh }); equity.lastT = t;
+  }
+
+  function cards() {
+    if (!V) return;
+    $("rbCards").innerHTML = V.coins.map(c => {
+      const up = c.arrow === "up", ar = c.arrow ? `<b class="${up ? "pos" : "neg"}">${up ? "▲" : "▼"}</b> ${esc((c.arrow_wib || "").slice(11))}${num(c.bars_since) ? ` (${c.bars_since} bars)` : ""}` : "no arrow";
+      const ex = num(c.vs_exit_pct) ? `<span class="${c.vs_exit_pct >= 0 ? "pos" : "neg"}">${c.vs_exit_pct >= 0 ? "above" : "below"} exit ${pct(c.vs_exit_pct)}</span>` : "";
+      const pl = c.pos === "long" ? `<span class="${cls(c.unreal)}">${usd(c.unreal, 1)} (${pct(c.unreal_pct)})</span><br>entry ${px(c.entry)}` + (num(c.tp_px) ? `<br><span class="pos">TP ${px(c.tp_px)}</span> ${pct(c.to_tp, 1)}<br><span class="neg">SL ${px(c.sl_px)}</span> ${pct(c.to_sl, 1)}` : "") : (D.pool ? "in pool cash" : `cash ${usd(c.value)}`);
+      const p = pend[c.coin], pd = (c.hit ? `<div class="pd hit">⚠ ${c.hit} hit, bot will close</div>` : "") + (p && p.act ? `<div class="pd">⏳ pending: bot will ${p.act === "BUY" && D.pool && !D.pool.free_slots ? "skip (slots full)" : p.act} at next open</div>` : "");
+      return `<button class="cc${c.coin === coin ? " sel" : ""}" data-c="${esc(c.coin)}"><div class="t"><span class="n">${esc(c.coin)}</span><span class="${c.pos === "long" ? "tagL" : "tagC"}">${c.pos === "long" ? "LONG" : "CASH"}</span></div>
+        <div class="px">${px(c.price)}</div><div class="m">${pl}<br>Last ${ar}<br>${ex}</div>${pd}</button>`;
+    }).join("");
+    $("rbCards").querySelectorAll(".cc").forEach(b => b.onclick = () => { coin = b.dataset.c; localStorage.setItem("rbCoin", coin); cards(); coinChart(true); });
+  }
+
+  function togs() {
+    const L = [["chan", "Channel"], ["base", "Baseline"], ["exit", "Exit line"], ["ssl1", "SSL1"], ["ssl2", "SSL2"], ["arrows", "Arrows"], ["fills", "B/S fills"]];
+    $("rbTogs").innerHTML = L.map(([k, l]) => `<label><input type="checkbox" data-k="${k}" ${TOG[k] ? "checked" : ""}>${l}</label>`).join("");
+    $("rbTogs").querySelectorAll("input").forEach(i => i.onchange = () => { TOG[i.dataset.k] = i.checked; localStorage.setItem("rbTogs", JSON.stringify(TOG)); coinChart(false); });
+  }
+  let livePL = null;
+  function livePriceLine() {
+    const c = V && V.coins.find(x => x.coin === coin); if (!pxS.c || !c || !c.live) return;
+    if (livePL) { try { pxS.c.removePriceLine(livePL); } catch (e) {} }
+    livePL = pxS.c.createPriceLine({ price: c.price, color: "#93c5fd", lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "live" });
+  }
+  function coinChart(scroll) {
+    const c = D.coins.find(x => x.coin === coin); if (!c) return;
+    $("rbPxSeg").innerHTML = D.coins.map(x => `<button class="${x.coin === coin ? "on" : ""}" data-c="${esc(x.coin)}">${esc(x.coin)}</button>`).join("");
+    $("rbPxSeg").querySelectorAll("button").forEach(b => b.onclick = () => { coin = b.dataset.c; localStorage.setItem("rbCoin", coin); cards(); coinChart(false); });
+    if (!$("rbTogs").childElementCount) togs();
+    $("rbPxT").textContent = `${c.coin}/USDT · ${D.tf}`;
+    const ch = c.chart;
+    if (!pxC) pxC = LightweightCharts.createChart($("rbPx"), chartOpt());
+    Object.values(pxS).forEach(s => { try { pxC.removeSeries(s); } catch (e) {} }); pxS = {}; livePL = null;
+    if (!ch || !ch.t || !ch.t.length) { $("rbPxNote").textContent = "No chart data for this coin yet."; return; }
+    const pf = { type: "price", precision: prec(c.price), minMove: Math.pow(10, -prec(c.price)) };
+    const line = (k, color, w, style) => { const s = pxC.addLineSeries({ color, lineWidth: w, lineStyle: style || 0, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat: pf });
+      s.setData(ch.t.map((t, i) => num(ch[k][i]) ? { time: T(t), value: ch[k][i] } : { time: T(t) })); pxS[k] = s; };
+    if (TOG.chan) { line("upper", "#64748b", 1, 2); line("lower", "#64748b", 1, 2); }
+    if (TOG.base) line("base", "#3b82f6", 2);
+    if (TOG.ssl1) line("ssl1", "#f59e0b", 1);
+    if (TOG.ssl2) line("ssl2", "#22d3ee", 1);
+    if (TOG.exit) line("exit", "#a78bfa", 2);
+    const cs = pxC.addCandlestickSeries({ upColor: "#22c55e", downColor: "#ef4444", borderVisible: false, wickUpColor: "#22c55e", wickDownColor: "#ef4444", priceFormat: pf, priceLineVisible: false });
+    cs.setData(ch.t.map((t, i) => ({ time: T(t), open: ch.o[i], high: ch.h[i], low: ch.l[i], close: ch.c[i] }))); pxS.c = cs;
+    const tset = new Set(ch.t), m = [];
+    if (TOG.arrows) { (ch.au || []).forEach(t => tset.has(t) && m.push({ time: T(t), position: "belowBar", color: "#22c55e", shape: "arrowUp", size: 1 }));
+      (ch.ad || []).forEach(t => tset.has(t) && m.push({ time: T(t), position: "aboveBar", color: "#ef4444", shape: "arrowDown", size: 1 })); }
+    if (TOG.fills) (ch.fills || []).forEach(f => { const t = tset.has(f.t) ? f.t : ch.t.find(x => x >= f.t); if (t != null) m.push({ time: T(t), position: f.side === "BUY" ? "belowBar" : "aboveBar", color: "#fde047", shape: f.side === "BUY" ? "arrowUp" : "arrowDown", text: f.side === "BUY" ? "B" : "S" + (num(f.pnl) ? " " + usd(f.pnl, 1) : "") }); });
+    m.sort((a, b) => a.time - b.time); cs.setMarkers(m);
+    if (c.pos === "long" && num(c.entry)) cs.createPriceLine({ price: c.entry, color: "#fde047", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "entry" });
+    if (c.pos === "long" && num(c.tp_px)) cs.createPriceLine({ price: c.tp_px, color: "#22c55e", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "TP +$" + (D.pool && D.pool.tp_usd) });
+    if (c.pos === "long" && num(c.sl_px)) cs.createPriceLine({ price: c.sl_px, color: "#ef4444", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "SL −$" + (D.pool && D.pool.sl_usd) });
+    const n = ch.t.length, vis = window.innerWidth < 760 ? 80 : 150;
+    if (n > vis) pxC.timeScale().setVisibleLogicalRange({ from: n - vis, to: n + 1 }); else pxC.timeScale().fitContent();
+    livePriceLine(); cinfo();
+    $("rbPxNote").textContent = `Last ${n} closed ${D.tf} bars up to the bar opened ${wib(ch.t[n - 1])} WIB, from the bot's own indicator output (the dotted blue "live" line is the current price). Drag or pinch to scroll back/zoom.`;
+    if (scroll) $("rbChartCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function cinfo() {
+    const c = V && V.coins.find(x => x.coin === coin); if (!c) return;
+    const I = [["Position", c.pos === "long" ? "LONG" : "CASH"], ["Price" + (c.live ? " · live" : ""), px(c.price)], ["Entry", c.pos === "long" ? px(c.entry) : "–"], ["Unrealised", c.pos === "long" ? usd(c.unreal, 1) + " · " + pct(c.unreal_pct) : "–"],
+      ["Exit line", px(c.exit_line)], ["Price vs exit", num(c.vs_exit_pct) ? pct(c.vs_exit_pct) + (c.above_exit ? " above" : " below") : "–"], ["Last arrow", c.arrow ? (c.arrow === "up" ? "▲ up " : "▼ down ") + (c.arrow_wib || "").slice(11) : "–"], ["Baseline", px(c.baseline)],
+      ["Units", num(c.units) ? String(+c.units.toPrecision(6)) : "–"], ...(num(c.tp_px) ? [["TP · to go", px(c.tp_px) + " · " + pct(c.to_tp)], ["SL · to go", px(c.sl_px) + " · " + pct(c.to_sl)], ["Net if sold", usd(c.net, 1)], ["Slot size", usd(c.size)]] : []), ["Realised", usd(c.realised, 1)], ["Value now", usd(c.value)], ["Buy & hold value", usd(c.bh_value)]];
+    $("rbCinfo").innerHTML = I.map(([l, v]) => `<div>${esc(l)}<b>${esc(v)}</b></div>`).join("");
+  }
+
+  function positions() {
+    if (!V) return; const o = V.open || [];
+    $("rbPos").tBodies[0].innerHTML = o.map(p => `<tr><td><b>${esc(p.coin)}</b><span class="sub">${usd(p.cost)}</span></td><td>${px(p.entry)}<span class="sub">${esc(p.entry_wib)}</span></td><td>${px(p.price)}<span class="sub ${cls(p.net)}">${usd(p.net, 1)}</span></td><td><span class="pos">${px(p.tp_px)}</span><span class="sub neg">${px(p.sl_px)}</span></td><td class="${cls(p.unreal)}">${usd(p.unreal, 1)}<span class="sub">${pct(p.unreal_pct)}</span>${p.hit ? `<span class="sub rbhit">⚠ ${p.hit} hit, bot will close</span>` : ""}</td></tr>`).join("");
+    const tot = o.reduce((a, p) => a + (p.unreal || 0), 0);
+    $("rbPosNote").innerHTML = o.length ? `${o.length} open · unrealised <span class="${cls(tot)}">${usd(tot, 1)}</span>${V.live ? " (live)" : ""} · TP/SL = price where the net P&amp;L (after both fees) is +$${D.pool ? D.pool.tp_usd : "–"} / −$${D.pool ? D.pool.sl_usd : "–"}` : "No open positions: all coins are in cash.";
+  }
+
+  function filters() {
+    const sel = $("rbFCoin"), coins = ["ALL", ...D.coins.map(c => c.coin)];
+    if (sel.options.length !== coins.length) { sel.innerHTML = coins.map(c => `<option value="${esc(c)}">${c === "ALL" ? "All coins" : esc(c)}</option>`).join(""); sel.onchange = () => { fCoin = sel.value; trades(); }; }
+    sel.value = fCoin;
+    $("rbFRes").innerHTML = [["all", "All"], ["win", "Wins"], ["loss", "Losses"]].map(([k, l]) => `<button data-k="${k}" class="${fRes === k ? "on" : ""}">${l}</button>`).join("");
+    $("rbFRes").querySelectorAll("button").forEach(b => b.onclick = () => { fRes = b.dataset.k; filters(); trades(); });
+  }
+  function trades() {
+    const t = (D.trades || []).filter(x => (fCoin === "ALL" || x.coin === fCoin) && (fRes === "all" || (fRes === "win" ? x.pnl > 0 : x.pnl <= 0)));
+    $("rbTr").tBodies[0].innerHTML = t.map(x => `<tr><td>${esc((x.out || "").slice(5))}<span class="sub">${esc((x.in || "").slice(5))}</span></td><td><b>${esc(x.coin)}</b><span class="sub">${esc(x.tf || "")}</span></td><td>${px(x.entry)}<span class="sub">${px(x.exit)}</span></td><td class="${cls(x.pnl)}">${usd(x.pnl, 1)}<span class="sub">${pct(x.ret)}<span class="rs ${esc(x.reason || "ARROW")}">${esc(x.reason || "ARROW")}</span></span></td></tr>`).join("") || `<tr><td colspan="4" class="empty">No closed trades match this filter.</td></tr>`;
+    const s = t.reduce((a, x) => a + (x.pnl || 0), 0), w = t.filter(x => x.pnl > 0).length;
+    $("rbTrNote").innerHTML = `${t.length} trade${t.length === 1 ? "" : "s"} · ${w} win${w === 1 ? "" : "s"} · total <span class="${cls(s)}">${usd(s, 1)}</span> (fees included). Newest first; the export keeps the last 200.`;
+  }
+  function events() {
+    $("rbEv").innerHTML = (D.events || []).map(e => `<div class="ev"><span class="w">${esc((e.wib || "").slice(5, 16))}</span><span class="k ${esc(e.kind)}">${esc((e.kind || "").replace("_", " "))}</span><span class="x">${esc(e.msg)}</span></div>`).join("") || `<div class="empty">No events.</div>`;
+  }
+  function poolCard() {
+    const P = D && D.pool; $("rbPoolC").classList.toggle("hide", !P); if (!P || !V) return;
+    $("rbPoolH").textContent = `· Max positions ${P.max_positions} · pool sizing · ${P.slots_used}/${P.max_positions} slots used · cash ${usd(P.cash)}`;
+    const sl = P.slots.map(s => { const c = V.coins.find(x => x.coin === s.coin) || {};
+      return `<div class="slot"><b>${esc(s.coin)}</b> LONG · size <b>${usd(s.cost)}</b> · value ${usd(c.value)} · net if sold <b class="${cls(c.net)}">${usd(c.net, 1)}</b>${c.hit ? ` <b class="rbhit">⚠ ${c.hit} hit, bot will close</b>` : ""}<br>entry ${px(s.entry)} · now ${px(c.price)}<br><span class="pos">TP ${px(s.tp_px)}</span> (${pct(c.to_tp)}) · <span class="neg">SL ${px(s.sl_px)}</span> (${pct(c.to_sl)})</div>`; });
+    for (let i = P.slots.length; i < P.max_positions; i++) sl.push(`<div class="slot free">Free slot · the next up arrow buys <b>${usd(P.next_trade_size)}</b> (cash ÷ ${P.free_slots} free slot${P.free_slots > 1 ? "s" : ""})</div>`);
+    $("rbSlots").innerHTML = sl.join("");
+    $("rbPoolN").innerHTML = `One shared cash pool since ${esc((P.since_wib || "").slice(0, 16))} WIB. Size per trade = pool cash ÷ free slots. More up arrows than free slots on one bar → the strongest (close − exit line)/ATR wins. TP/SL checked by the bot every 5 s (sold at the level price), catch-up on bar high/low with SL first; after TP/SL a coin needs a new up arrow.` +
+      (P.switches || []).map(s => `<br>${esc(s.at_wib.slice(5, 16))} ${esc(s.why)}: equity ${usd(s.equity_before)} → ${usd(s.equity_after)} (fee ${usd(s.fees)})`).join("");
+    $("rbSkip").innerHTML = (P.skipped || []).map(k => `<div class="skp">${esc((k.wib || "").slice(5))} · <b>${esc(k.coin)}</b> ▲ ${esc(k.tf || "")} skipped: ${esc(k.reason)} (${esc((k.held || []).join("+"))} held, strength ${num(k.strength) ? k.strength.toFixed(2) : "–"})</div>`).join("") || `<div class="meta">None yet (${P.n_skipped || 0}).</div>`;
+  }
+  function rules() {
+    const r = D.rules || {};
+    const sw = [...(D.mode_switches || []).map(s => `${s.at} mode ${s.from}→${s.to}`), ...(D.tf_switches || []).map(s => `${s.at} timeframe ${s.from}→${s.to}`)].sort();
+    $("rbRules").innerHTML = `<b>Rules:</b> ${esc(D.mode_text || D.mode)}. Entry: ${esc(r.entry || "–")}. Exit: ${esc(r.exit || "–")}. Fill: ${esc(r.fill || "–")}. Fee ${num(r.fee) ? (r.fee * 100).toFixed(2) + "%" : "–"} per side. Capital ${usd(D.capital)} ${D.pool ? `traded as one pool (max ${D.pool.max_positions} positions, size = cash ÷ free slots, TP +$${D.pool.tp_usd} / SL −$${D.pool.sl_usd} net per position) since ${esc((D.pool.since_wib || "").slice(0, 16))} WIB; before that split $100 per coin over` : "split over"} ${D.coins.map(c => esc(c.coin)).join(", ")} since ${esc(D.start_wib)} WIB. Bot prices: ${esc(D.source || "Binance")}.` +
+      (sw.length ? `<br><b>Switches:</b> ${sw.map(esc).join(" · ")}` : "") + `<br>Paper simulation only, not financial advice.`;
+  }
+
+  // ---------- timers ----------
+  setInterval(() => { if (D && onBot()) header(); }, 1000);
+  setInterval(() => { if (onBot() && !document.hidden) prices(); }, PRICE_MS);
+  setInterval(() => { if (onBot() && !document.hidden) load(); }, 60000);
+  setInterval(() => { if (D && onBot() && !document.hidden) { const tb = TFMS[D.tf] || 9e5; if (Math.floor(Date.now() / tb) !== Math.floor(pendT / tb) && Date.now() % tb > 20000) arrows(); } }, 10000);   // new bar closed -> re-check arrows
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && onBot()) { prices(); if (Date.now() - lastFetch > 30000) load(); } });
+  return { load, show() { if (!D || Date.now() - lastFetch > 30000) load(); else { prices(); setTimeout(() => { eqC && eqC.timeScale().fitContent(); }, 0); } } };
+})();
+</script>
+
+<script>
+if (typeof window !== "undefined") (function () {
+const COINS = ["BTC","ETH","ZEC","SOL","XRP","NEAR","BNB","ENA","QNT","SUI","WLD","DOGE","PEPE","UNI","TRX","BMT","HYPE","ERA","LINK","HUMA","PUMP","AAVE","ADA","TAO","INJ","CHIP","LTC","ONDO","AVAX","AI"];
+const TFS = ["15m","1h","4h","1d","1w"], TF_MS = {"15m":9e5,"1h":36e5,"4h":144e5,"1d":864e5,"1w":6048e5};
+const LOOKBACK_DAYS = {"15m":367,"1h":3*365+5,"4h":3*365+20,"1d":3*365+120,"1w":9*365};
+const SOURCES = [
+  { name: "api.binance.com", url: "https://api.binance.com/api/v3/klines", iv: tf => tf, max: 1000 },
+  { name: "data-api.binance.vision", url: "https://data-api.binance.vision/api/v3/klines", iv: tf => tf, max: 1000 },
+  { name: "api.mexc.com", url: "https://api.mexc.com/api/v3/klines", iv: tf => ({"1h":"60m","1w":"1W"}[tf] || tf), max: 500 },
+];
+const S = Object.assign({ tf: "1h", dir: "long", ex: "baseline", tab: "pap", coin: "BTC", sort: "since", asc: true, cap: 500, auto: true }, JSON.parse(localStorage.getItem("sslh") || "{}"));
+S.tab = ({ "#sig": "sig", "#det": "det", "#pap": "pap" })[location.hash] || "bot";   // the Real bot tab is the default on every load
+const SETKEYS = ["tf", "dir", "ex", "cap", "coin"];
+const R = {}; SETKEYS.forEach(k => R[k] = S[k]);   // committed by ▶ Run; everything shown uses R
+const save = () => localStorage.setItem("sslh", JSON.stringify({ tf: S.tf, dir: S.dir, ex: S.ex, tab: S.tab, coin: S.coin, sort: S.sort, asc: S.asc, cap: S.cap, auto: S.auto }));
+const $ = id => document.getElementById(id);
+let srcIdx = 0, busy = false, inflight = 0, done = 0, total = 0;
+const sigCache = {};   // tf -> coin -> {d, res}
+const detCache = {};   // sym|tf -> data
+const sourceOK = {};
+
+// ---- throttled fetch: max 4 concurrent, >=120 ms between request starts
+const queue = []; let active = 0, lastStart = 0;
+function throttled(fn) { return new Promise((res, rej) => { queue.push({ fn, res, rej }); pump(); }); }
+function pump() {
+  if (active >= 4 || !queue.length) return;
+  const wait = Math.max(0, lastStart + 120 - Date.now());
+  if (wait) { setTimeout(pump, wait); return; }
+  const j = queue.shift(); active++; lastStart = Date.now();
+  j.fn().then(j.res, j.rej).finally(() => { active--; pump(); });
+  pump();
+}
+async function getJSON(url) {
+  const ac = new AbortController(); const to = setTimeout(() => ac.abort(), 12000);
+  try { const r = await fetch(url, { signal: ac.signal }); if (!r.ok) { const e = new Error("HTTP " + r.status); e.status = r.status; throw e; } return await r.json(); }
+  finally { clearTimeout(to); }
+}
+async function klines(sym, tf, opts = {}) {
+  let lastErr;
+  for (let k = 0; k < SOURCES.length; k++) {
+    const si = (srcIdx + k) % SOURCES.length, s = SOURCES[si];
+    const p = new URLSearchParams({ symbol: sym, interval: s.iv(tf), limit: String(Math.min(opts.limit || 1000, s.max)) });
+    if (opts.startTime) p.set("startTime", String(opts.startTime));
+    try {
+      const raw = await throttled(() => getJSON(`${s.url}?${p}`));
+      sourceOK[s.name] = true;
+      if (si !== srcIdx) srcIdx = si;
+      return raw.map(r => [Number(r[0]), +r[1], +r[2], +r[3], +r[4], Number(r[6])]);
+    } catch (e) {
+      lastErr = e; sourceOK[s.name] = false;
+      if (e.status === 400) throw new Error("Unknown symbol " + sym); // invalid symbol: don't try other hosts
+      if (e.status === 429 || e.status === 418) await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  throw lastErr || new Error("all sources failed");
+}
+function toData(rows) {
+  const now = Date.now();
+  const closed = rows.filter(r => r[5] < now);      // only fully closed bars drive signals
+  const live = rows.length ? rows[rows.length-1] : null;
+  return { t: closed.map(r => r[0]), o: closed.map(r => r[1]), h: closed.map(r => r[2]), l: closed.map(r => r[3]), c: closed.map(r => r[4]), livePx: live ? live[4] : NaN };
+}
+function analyse(d, tf) {
+  if (d.c.length < WARMUP + 60) return null;
+  const ind = indicator(d), vi = {};
+  const bt = backtest(d, ind, R.dir, R.ex), m = metrics(d, bt, tf);
+  const n = d.c.length; let li = -1;
+  for (let i = n-1; i >= 0; i--) if (ind.L[i] || ind.S[i]) { li = i; break; }
+  return { ind, bt, m, color: ind.color[n-1], exSt: ind.exSt[n-1], since: li >= 0 ? n-1-li : null, lastSig: li >= 0 ? (ind.L[li] ? "L" : "S") : null };
+}
+
+// ---- formatting
+const WIB = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+const fmtPct = v => isFinite(v) ? (v >= 0 ? "+" : "") + (Math.abs(v) >= 10 ? (v*100).toFixed(0) : (v*100).toFixed(1)) + "%" : "–";
+const fmtPx = v => !isFinite(v) ? "–" : v >= 1000 ? v.toFixed(0) : v >= 1 ? v.toFixed(v >= 100 ? 2 : 3) : v.toPrecision(4);
+const fmtPf = v => v >= 99 ? "∞" : v.toFixed(2);
+const fmtUsd = v => !isFinite(v) ? "–" : (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: Math.abs(v) >= 1e4 ? 0 : 2, maximumFractionDigits: Math.abs(v) >= 1e4 ? 0 : 2 });
+const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+
+// ---- controls
+function seg(el, opts, key, after) {
+  el.innerHTML = "";
+  opts.forEach(([v, lab]) => { const b = document.createElement("button"); b.textContent = lab; b.className = S[key] === v ? "on" : ""; b.onclick = () => { S[key] = v; save(); seg(el, opts, key, after); after(); }; el.appendChild(b); });
+}
+seg($("tfSeg"), TFS.map(t => [t, t]), "tf", markStale);
+seg($("dirSeg"), [["long", "Long-only"], ["ls", "Long+Short"]], "dir", markStale);
+seg($("exSeg"), [["baseline", "Baseline exit"], ["exitssl", "Exit SSL"]], "ex", markStale);
+function setTab(t, load = true) {
+  S.tab = t; save();
+  [["bot", "tabBot", "vBot"], ["sig", "tabSig", "vSig"], ["det", "tabDet", "vDet"], ["pap", "tabPap", "vPap"]].forEach(([k, b, v]) => { $(b).className = t === k ? "on" : ""; $(v).className = t === k ? "" : "hide"; });
+  document.body.classList.toggle("onPaper", t === "pap"); document.body.classList.toggle("onBot", t === "bot");
+  if (typeof markStale === "function") markStale();
+  if (load) ensureView();
+}
+$("tabBot").onclick = () => setTab("bot"); $("tabSig").onclick = () => setTab("sig"); $("tabDet").onclick = () => setTab("det"); $("tabPap").onclick = () => setTab("pap");
+COINS.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c + "/USDT"; $("coinSel").appendChild(o); });
+function selectCoin(c) {
+  if (!COINS.includes(c) && ![...$("coinSel").options].some(o => o.value === c)) { const o = document.createElement("option"); o.value = c; o.textContent = c + "/USDT"; $("coinSel").appendChild(o); }
+  $("coinSel").value = c; S.coin = c; save();
+}
+$("coinSel").onchange = e => { selectCoin(e.target.value); markStale(); };
+$("symGo").onclick = () => { let v = $("symIn").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, ""); if (!v) return; if (v.endsWith("USDT") && v.length > 4) v = v.slice(0, -4); selectCoin(v); $("symIn").value = ""; markStale(); };
+$("symIn").addEventListener("keydown", e => { if (e.key === "Enter") $("symGo").click(); });
+document.querySelectorAll("#sigT th").forEach(th => th.onclick = () => { const k = th.dataset.k; if (S.sort === k) S.asc = !S.asc; else { S.sort = k; S.asc = k === "coin" || k === "since"; } save(); renderSignals(false); });
+$("refresh").onclick = () => S.tab === "bot" ? RB.load() : refreshAll();
+$("capIn").value = S.cap;
+$("capIn").addEventListener("change", () => { const v = parseFloat($("capIn").value); S.cap = isFinite(v) && v > 0 ? v : 500; $("capIn").value = S.cap; save(); markStale(); });
+$("capIn").addEventListener("input", () => { const v = parseFloat($("capIn").value); if (isFinite(v) && v > 0 && v !== R.cap) { document.body.classList.add("isStale"); S.cap = v; save(); autoRun(900); } });
+
+function progress() { $("prog").style.width = total ? (100*done/total) + "%" : "0"; if (done >= total) setTimeout(() => { if (done >= total) $("prog").style.width = "0"; }, 400); }
+function stamp() {
+  $("upd").textContent = "Updated " + WIB.format(new Date()) + " WIB";
+  const ok = Object.entries(sourceOK).filter(([, v]) => v).map(([k]) => k);
+  $("src").textContent = ok.length ? "· via " + SOURCES[srcIdx].name : "";
+}
+
+// ---- signals overview
+async function loadSignals() {
+  const tf = R.tf; sigCache[tf] = sigCache[tf] || {}; sigRun.n = 0; sigRun.total = COINS.length; runProgress();
+  total += COINS.length; progress();
+  const errs = [];
+  await Promise.all(COINS.map(async c => {
+    try { const rows = await klines(c + "USDT", tf, { limit: 1000 }); sigCache[tf][c] = { d: toData(rows) }; }
+    catch (e) { errs.push(c + ": " + e.message); }
+    finally { done++; progress(); sigRun.n++; runProgress(); if (R.tf === tf) renderSignalsDebounced(); }
+  }));
+  $("sigErr").textContent = errs.length ? "Failed: " + errs.join(", ") : "";
+  if (R.tf === tf) { renderSignals(true); stamp(); sigRun.key = runKey(); }
+}
+let rt = null; function renderSignalsDebounced() { clearTimeout(rt); rt = setTimeout(() => renderSignals(true), 150); }
+function renderSignals(recompute) {
+  const tf = R.tf, cache = sigCache[tf] || {};
+  const rows = [];
+  for (const c of COINS) {
+    const e = cache[c]; if (!e) continue;
+    if (recompute || !e.a || e.key !== R.dir + R.ex) { e.a = analyse(e.d, tf); e.key = R.dir + R.ex; }
+    const a = e.a;
+    rows.push({ coin: c, state: a ? a.color : 0, since: a && a.since !== null ? a.since : 1e9, sig: a && a.lastSig, px: e.d.livePx, pf: a ? a.m.profit_factor : NaN, ret: a ? a.m.total_return : NaN, bh: a ? a.m.bh_return : NaN, end: a ? R.cap*(1 + a.m.total_return) : NaN, bhEnd: a ? R.cap*(1 + a.m.bh_return) : NaN, ok: !!a, tr: a ? a.m.trades : 0 });
+  }
+  const k = S.sort, dir = S.asc ? 1 : -1;
+  rows.sort((x, y) => { if (k === "coin") return x.coin.localeCompare(y.coin) * dir; const fx = isFinite(x[k]), fy = isFinite(y[k]); if (fx !== fy) return fx ? -1 : 1; return fx ? (x[k] - y[k]) * dir : 0; });
+  document.querySelectorAll("#sigT th").forEach(th => { th.dataset.lab = th.dataset.lab || th.innerHTML; th.innerHTML = th.dataset.lab.replace(/^([^<]+)/, '$1' + (th.dataset.k === k ? (S.asc ? ' ▲' : ' ▼') : '')); });
+  $("sigT").tBodies[0].innerHTML = rows.map(r => {
+    const st = !r.ok ? '<span class="badge neu">n/a</span>' : r.state > 0 ? '<span class="badge bull">Bull</span>' : r.state < 0 ? '<span class="badge bear">Bear</span>' : '<span class="badge neu">Neutral</span>';
+    const fresh = r.ok && r.since <= 3;
+    const since = r.since >= 1e9 ? "–" : r.since + (r.sig === "L" ? "↑" : "↓") + (fresh ? '<span class="new" title="fresh flip"></span>' : "");
+    return `<tr class="r${fresh ? " fresh" : ""}" data-c="${r.coin}"><td><b>${r.coin}</b><span class="sub">${fmtPx(r.px)}</span></td><td>${st}</td><td>${since}</td><td class="${r.pf > 1 ? "pos" : r.pf < 1 ? "neg" : ""}">${r.ok ? fmtPf(r.pf) : "–"}</td><td class="${cls(r.ret)}">${fmtPct(r.ret)}<span class="sub">${fmtPct(r.bh)}</span></td><td class="${cls(r.ret)}">${fmtUsd(r.end)}<span class="sub">${fmtUsd(r.bhEnd)}</span></td></tr>`;
+  }).join("");
+  $("sigT").querySelectorAll("tr.r").forEach(tr => tr.onclick = () => { selectCoin(tr.dataset.c); R.coin = tr.dataset.c; markStale(); setTab("det"); window.scrollTo(0, 0); });
+}
+
+// ---- detail
+let pChart, eChart, sCandle, sBase, sUp, sLo, sEx, sEq, sBh, sS1, sS2;
+const wibT = ms => Math.floor(ms/1000) + 7*3600;  // charts render UTC; shift to WIB
+function initCharts() {
+  if (pChart) return;
+  const opt = el => ({ width: el.clientWidth, height: el.clientHeight, layout: { background: { color: "#141923" }, textColor: "#8a93a6", fontSize: 11 }, grid: { vertLines: { color: "#1e2533" }, horzLines: { color: "#1e2533" } }, rightPriceScale: { borderColor: "#262e3f" }, timeScale: { borderColor: "#262e3f", timeVisible: true, secondsVisible: false }, crosshair: { mode: 0 }, handleScale: { axisPressedMouseMove: true }, handleScroll: { vertTouchDrag: false } });
+  pChart = LightweightCharts.createChart($("pc"), opt($("pc")));
+  sCandle = pChart.addCandlestickSeries({ upColor: "#22c55e", downColor: "#ef4444", borderVisible: false, wickUpColor: "#22c55e", wickDownColor: "#ef4444" });
+  sUp = pChart.addLineSeries({ color: "#64748b", lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  sLo = pChart.addLineSeries({ color: "#64748b", lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  sBase = pChart.addLineSeries({ color: "#3b82f6", lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  sEx = pChart.addLineSeries({ color: "#a78bfa", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  sS1 = pChart.addLineSeries({ color: "#f59e0b", lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  sS2 = pChart.addLineSeries({ color: "#22d3ee", lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  eChart = LightweightCharts.createChart($("ec"), Object.assign(opt($("ec")), { rightPriceScale: { mode: 1, borderColor: "#262e3f" }, localization: { priceFormatter: v => "$" + (v >= 1000 ? Math.round(v).toLocaleString("en-US") : v.toFixed(v >= 10 ? 0 : 2)) } }));
+  sBh = eChart.addLineSeries({ color: "#8a93a6", lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+  sEq = eChart.addLineSeries({ color: "#22c55e", lineWidth: 2, priceLineVisible: false });
+  new ResizeObserver(() => { pChart.applyOptions({ width: $("pc").clientWidth }); eChart.applyOptions({ width: $("ec").clientWidth }); }).observe($("pc"));
+}
+async function fetchHistory(sym, tf) {
+  const key = sym + "|" + tf, iv = TF_MS[tf], now = Date.now();
+  let rows = detCache[key];
+  if (!rows) {
+    const start = now - LOOKBACK_DAYS[tf]*864e5, chunk = 1000*iv, starts = [];
+    for (let s = start; s < now; s += chunk) starts.push(s);
+    total += starts.length; progress(); detRun.n = 0; detRun.total = starts.length; runProgress();
+    const parts = await Promise.all(starts.map(s => klines(sym, tf, { startTime: Math.floor(s), limit: 1000 }).finally(() => { done++; progress(); detRun.n++; runProgress(); })));
+    rows = parts.flat();
+  } else {
+    total++; progress(); detRun.n = 0; detRun.total = 1; runProgress();
+    try { rows = rows.concat(await klines(sym, tf, { limit: 1000 })); } finally { done++; progress(); detRun.n = 1; runProgress(); }
+  }
+  const m = new Map(); rows.forEach(r => m.set(r[0], r));
+  rows = [...m.values()].sort((a, b) => a[0] - b[0]);
+  detCache[key] = rows; return rows;
+}
+let detSeq = 0;
+async function loadDetail(fit) {
+  const coin = R.coin, sym = coin + "USDT", tf = R.tf, seq = ++detSeq;
+  $("detHead").textContent = `${coin}/USDT · ${tf} · loading history…`; $("detErr").textContent = "";
+  initCharts();
+  let rows;
+  try { rows = await fetchHistory(sym, tf); } catch (e) { if (seq === detSeq) { $("detErr").textContent = e.message; $("detHead").textContent = `${coin}/USDT · ${tf}`; } return; }
+  if (seq !== detSeq) return;
+  const d = toData(rows), a = analyse(d, tf);
+  if (!a) { $("detErr").textContent = "Not enough history (need 180+ bars)."; return; }
+  const n = d.c.length, ind = a.ind, m = a.m;
+  const T = d.t.map(wibT);
+  const nowPx = d.livePx;
+  $("detHead").innerHTML = `${coin}/USDT · ${tf} · <span class="${a.color > 0 ? "pos" : a.color < 0 ? "neg" : ""}">${a.color > 0 ? "Bullish" : a.color < 0 ? "Bearish" : "Neutral"}</span> · ${fmtPx(nowPx)}`;
+  // show last ~300 bars on price chart (scroll for more; full series loaded)
+  const lineData = arr => arr.map((v, i) => isFinite(v) ? { time: T[i], value: v } : null).filter(Boolean);
+  sCandle.setData(d.t.map((_, i) => ({ time: T[i], open: d.o[i], high: d.h[i], low: d.l[i], close: d.c[i] })));
+  sBase.setData(lineData(ind.base)); sUp.setData(lineData(ind.upper)); sLo.setData(lineData(ind.lower)); sEx.setData(lineData(ind.exLine)); sS1.setData(lineData(ind.ssl1)); sS2.setData(lineData(ind.ssl2));
+  const mk = [];
+  for (let i = 0; i < n; i++) {
+    if (ind.L[i]) mk.push({ time: T[i], position: "belowBar", color: "#22c55e", shape: "arrowUp", text: "L" });
+    if (ind.S[i]) mk.push({ time: T[i], position: "aboveBar", color: "#ef4444", shape: "arrowDown", text: "S" });
+    if (ind.XS[i]) mk.push({ time: T[i], position: "belowBar", color: "#86efac", shape: "arrowUp", text: "▲", size: 0.7 });   // Exit Arrow up
+    if (ind.XL[i]) mk.push({ time: T[i], position: "aboveBar", color: "#fca5a5", shape: "arrowDown", text: "▼", size: 0.7 });  // Exit Arrow down
+  }
+  // strategy fills (next-bar open) as small squares
+  a.bt.events.forEach(([i, k]) => { if (k === "x") mk.push({ time: T[i], position: "inBar", color: "#f59e0b", shape: "square", size: 0.6 }); });
+  mk.sort((x, y) => x.time - y.time); sCandle.setMarkers(mk);
+  if (fit) pChart.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 120), to: n + 3 });
+  const c0 = d.o[WARMUP];
+  const step = Math.max(1, Math.ceil((n - WARMUP) / 500)), eqIdx = [];   // downsample so the whole history fits a phone screen
+  for (let i = WARMUP; i < n; i += step) eqIdx.push(i); if (eqIdx[eqIdx.length-1] !== n-1) eqIdx.push(n-1);
+  const C = R.cap;   // results are computed on 1 unit (identical to Python) and scaled to the chosen capital
+  sEq.setData(eqIdx.map(i => ({ time: T[i], value: Math.max(C*a.bt.eq[i], C*1e-4) })));
+  sBh.setData(eqIdx.map(i => ({ time: T[i], value: C*d.c[i]/c0 })));
+  if (fit) eChart.timeScale().fitContent();
+  const pn = p => p > 0 ? "Long" : p < 0 ? "Short" : "Flat";
+  const posNow = pn(a.bt.pos) + (a.bt.target !== a.bt.pos ? " → " + pn(a.bt.target) : "");
+  const eqU = a.bt.eq.slice(WARMUP).map(v => C*v);
+  let pk = eqU[0], ddUsd = 0, ddPct = 0;
+  for (const v of eqU) { if (v > pk) pk = v; if (pk - v > ddUsd) { ddUsd = pk - v; ddPct = (v/pk) - 1; } }
+  const endBal = eqU[eqU.length-1], net = endBal - C, bhEnd = C*(1 + m.bh_return);
+  const openVal = a.bt.pos !== 0 ? endBal : null, openPnl = a.bt.openRet !== null ? endBal*a.bt.openRet/(1 + a.bt.openRet) : null;
+  const K = [
+    ["Ending balance", fmtUsd(endBal), "from " + fmtUsd(C) + " · B&H " + fmtUsd(bhEnd), cls(net)],
+    ["Net profit", fmtUsd(net), "B&H " + fmtUsd(bhEnd - C), cls(net)],
+    ["Largest $ drop", fmtUsd(-ddUsd), "peak-to-trough, " + fmtPct(ddPct) + " of that peak", "neg"],
+    ["Avg $ per trade", m.trades ? fmtUsd(net/m.trades) : "–", m.trades + " trades incl. open", cls(net)],
+    ["Open position value", openVal !== null ? fmtUsd(openVal) : "No position", openVal !== null ? (a.bt.pos > 0 ? "long" : "short") + ", unrealised " + fmtUsd(openPnl) : "flat, all cash " + fmtUsd(endBal), openPnl !== null ? cls(openPnl) : ""],
+    ["Return", fmtPct(m.total_return), "B&H " + fmtPct(m.bh_return), cls(m.total_return)],
+    ["CAGR", fmtPct(m.cagr), m.years.toFixed(2) + " yrs", cls(m.cagr)],
+    ["Max drawdown", fmtPct(m.max_dd), "B&H " + fmtPct(m.bh_max_dd), "neg"],
+    ["Profit factor", fmtPf(m.profit_factor), "win rate " + (m.win_rate*100).toFixed(0) + "%", m.profit_factor > 1 ? "pos" : "neg"],
+    ["Trades", String(m.trades), "fee 0.1%/side", ""],
+    ["Sharpe", m.sharpe.toFixed(2), "B&H " + m.bh_sharpe.toFixed(2), cls(m.sharpe)],
+    ["Position now", posNow, (a.bt.target !== a.bt.pos ? "changes at next bar open; " : "") + (a.since !== null ? `last ${a.lastSig === "L" ? "long" : "short"} signal ${a.since} bars ago` : "no signal"), ""],
+    ["Exit SSL", a.exSt > 0 ? "Up" : a.exSt < 0 ? "Down" : "–", "HMA15 high/low", a.exSt > 0 ? "pos" : a.exSt < 0 ? "neg" : ""],
+  ];
+  $("kpis").innerHTML = K.map(([l, v, s, c]) => `<div class="kpi"><div class="l">${l}</div><div class="v ${c}">${v}</div><div class="s">${s}</div></div>`).join("");
+  $("detNote").textContent = `Capital: ${fmtUsd(C)} at the first tradable bar, full balance compounded into every trade (100% in, no leverage), 0.1% fee on each entry and exit, shorts unlevered. ${n} closed bars from ${new Date(d.t[0]).toISOString().slice(0, 10)}; first ${WARMUP} are indicator warm-up. Orange squares mark strategy exits at the next bar's open. Chart times in WIB.`;
+  stamp(); detRun.key = runKey();
+}
+
+
+// ---- Paper trading (forward test, simulation only; reuses CORE indicator + backtest unchanged)
+const PAPER_COINS = ["ZEC", "NEAR", "PEPE", "SOL", "XRP", "BTC", "ETH"], PAPER_DEF = ["ZEC", "NEAR", "PEPE", "SOL", "XRP"];
+const PTF_MS = {"15m": 9e5, "1h": 36e5, "4h": 144e5}, RULES = { arrow_long: "Exit Arrows (▲ buy / ▼ sell)", state_long: "Baseline colour (bull = long)", cross_long: "Baseline crossover only" };
+let BAR = 9e5; const PRE_BARS = 1000;   // bar size of the committed paper timeframe; 1000 bars of warm-up history before the start
+const wibToMs = s => { const m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(s || ""); return m ? Date.UTC(+m[1], m[2]-1, +m[3], +m[4], +m[5]) - 7*36e5 : NaN; };
+const msToWibInput = ms => new Date(ms + 7*36e5).toISOString().slice(0, 16);
+const WIBS = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+const P = Object.assign({ start: "2026-10-27T07:52", cap: 500, mode: "pf", sel: PAPER_DEF.slice(), tf: "15m", rule: "arrow_long" }, JSON.parse(localStorage.getItem("sslh_paper2") || "{}"));
+if (!PTF_MS[P.tf]) P.tf = "15m"; if (!RULES[P.rule]) P.rule = "arrow_long";
+const PR = JSON.parse(JSON.stringify(P));   // committed paper settings (applied by ▶ Run)
+const savePaper = () => localStorage.setItem("sslh_paper2", JSON.stringify(P));
+const papKey = o => [o.start, o.cap, o.mode, o.mode === "pf" ? o.sel.join(",") : "", o.tf, o.rule].join("|");
+const papCoins = o => o.mode === "pf" ? o.sel.slice() : [o.mode];
+const papText = o => `Browser sim · ${o.tf} · Long-only · ${RULES[o.rule]} · ${fmtUsd(o.cap)} · ${o.mode === "pf" ? "Portfolio " + o.sel.join("+") : o.mode} · from ${o.start.replace("T", " ")} WIB`;
+const papRun = { key: null, n: 0, total: 0 }, papCache = {};   // sym -> {from, rows}
+let ppChart = null, ppEq = null, ppBh = null, papLast = null, pxChart = null, pxS = {}, pxCoin = null;
+
+function paperForm() {
+  $("pStart").value = P.start; $("pCap").value = P.cap;
+  const opts = [["pf", "Portfolio: split capital equally across selected coins"]].concat(COINS.map(c => [c, c + "/USDT only"]));
+  $("pMode").innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join(""); $("pMode").value = P.mode;
+  $("pChips").innerHTML = PAPER_COINS.map(c => `<label><input type="checkbox" value="${c}" ${P.sel.includes(c) ? "checked" : ""}>${c}</label>`).join("");
+  $("pChips").classList.toggle("off", P.mode !== "pf");
+  $("pRule").innerHTML = Object.entries(RULES).map(([v, l]) => `<option value="${v}">${l}${v === "arrow_long" ? " · default" : ""}</option>`).join(""); $("pRule").value = P.rule;
+  $("pTfSeg").innerHTML = Object.keys(PTF_MS).map(t => `<button type="button" data-tf="${t}" class="${P.tf === t ? "on" : ""}">${t}</button>`).join("");
+  $("pTfSeg").querySelectorAll("button").forEach(b => b.onclick = e => { e.preventDefault(); P.tf = b.dataset.tf; paperChanged(); });
+}
+function paperChanged() {
+  const st = $("pStart").value; if (isFinite(wibToMs(st))) P.start = st;
+  const v = parseFloat($("pCap").value); P.cap = isFinite(v) && v > 0 ? v : 500;
+  P.mode = $("pMode").value; P.rule = RULES[$("pRule").value] ? $("pRule").value : "arrow_long";
+  const sel = [...$("pChips").querySelectorAll("input:checked")].map(i => i.value);
+  P.sel = sel.length ? PAPER_COINS.filter(c => sel.includes(c)) : P.sel;   // keep at least one coin
+  savePaper(); paperForm(); markStale();
+}
+["pStart", "pCap", "pMode", "pRule"].forEach(id => $(id).addEventListener("change", paperChanged));
+$("pChips").addEventListener("change", paperChanged);
+$("pReset").onclick = () => {
+  if (!confirm("Restart the paper test from now? The current paper results will be replaced (it is only a simulation).")) return;
+  P.start = msToWibInput(Date.now()); savePaper(); paperForm(); runNow();
+};
+
+async function paperRows(sym, startMs, tf) {
+  const t0 = Math.ceil(startMs / BAR) * BAR, from = t0 - PRE_BARS*BAR, now = Date.now();
+  const ck = sym + "|" + tf; let e = papCache[ck];
+  if (!e || e.from > from) {   // fetch warm-up + everything since the start, 1000 bars per request
+    const starts = []; for (let s = from; s < now; s += 1000*BAR) starts.push(s);
+    const parts = await Promise.all(starts.map(s => klines(sym, tf, { startTime: s, limit: 1000 })));
+    e = papCache[ck] = { from, rows: parts.flat() };
+  } else {   // incremental refresh from the last cached bar
+    const last = e.rows[e.rows.length-1][0];
+    e.rows = e.rows.concat(await klines(sym, tf, { startTime: last - BAR, limit: 1000 }));
+  }
+  const m = new Map(); e.rows.forEach(r => m.set(r[0], r));
+  e.rows = [...m.values()].sort((a, b) => a[0] - b[0]);
+  return e.rows.filter(r => r[0] >= from);
+}
+// One coin: indicator on the full history, then the unchanged CORE backtest on a slice whose WARMUP bar is the
+// last bar that closes after the start (its signal fills at the first bar open after the start).
+// Target-series engine = paper_bot.sim_state (decide at close i, fill at the open of i+1, 0.1% fee per side, compounding).
+function simTarget(d, tgt) {
+  const { o, c } = d, n = c.length;
+  let pos = 0, target = 0, cash = 1, units = 0, entryEq = null;
+  const eq = new Array(n).fill(1), trades = [], events = [];
+  for (let i = WARMUP; i < n; i++) {
+    if (i > WARMUP && target !== pos) {
+      const px = o[i];
+      if (pos !== 0) { const val = units*px*(1-FEE); trades.push(val/entryEq - 1); events.push([i, "x", pos]); cash = val; pos = 0; }
+      if (target !== 0) { entryEq = cash; const ca = cash*(1-FEE); units = ca/px; cash = ca; pos = target; events.push([i, "L", target]); }
+    }
+    eq[i] = pos > 0 ? units*c[i] : cash;
+    target = tgt[i];
+  }
+  return { eq, trades, openRet: pos !== 0 ? eq[n-1]/entryEq - 1 : null, pos, target, events };
+}
+const persist = col => { let cur = 0; return col.map(v => (v !== 0 ? (cur = v) : cur)); };
+function paperCoin(rows, startMs, coinCap, rule) {
+  const d = toData(rows), n = d.t.length;
+  const t0 = Math.ceil(startMs / BAR) * BAR;
+  const res = { d, coin: null, started: false, trades: [], pos: null, eqT: [], eqV: [], bhV: [], value: coinCap, pending: null, sigNow: null, fees: 0, rule, fills: [] };
+  const ind = indicator(d), sIdx = d.t.indexOf(t0 - BAR);   // bar closing at t0: its signal fills at the first open after the start
+  res.ind = ind; let la = -1; for (let i = n-1; i >= 0; i--) if (ind.arrow[i]) { la = i; break; }
+  res.arrow = la >= 0 ? { dir: ind.arrow[la] > 0 ? "up" : "down", t: d.t[la], bars: n-1-la } : null;
+  res.exLine = ind.exLine[n-1]; res.exSt = ind.exSt[n-1]; res.color = ind.color[n-1];
+  if (sIdx < WARMUP) { res.waitingFor = t0; return res; }
+  const off = sIdx - WARMUP, sl = a => a.slice(off);
+  const ds = { t: sl(d.t), o: sl(d.o), h: sl(d.h), l: sl(d.l), c: sl(d.c) };
+  const is = {}; for (const k of ["L", "S", "XL", "XS"]) is[k] = sl(ind[k]);
+  let bt;
+  if (rule === "cross_long") bt = backtest(ds, is, "long", "baseline");
+  else bt = simTarget(ds, sl(rule === "arrow_long" ? ind.arrowSt : persist(ind.color)).map(v => v > 0 ? 1 : 0));   // arrow_long: hold the latest arrow's state
+  res.started = true; res.off = off;
+  // replay the fills to get prices, units and fees in dollars (same arithmetic as CORE)
+  let cash = coinCap, units = 0, ent = null;
+  for (const [i, k] of bt.events) {
+    const px = ds.o[i], tm = ds.t[i];
+    res.fills.push({ t: tm, side: k === "L" ? "BUY" : "SELL", px });
+    if (k === "L") { const fee = cash*FEE; units = (cash - fee)/px; ent = { i, tm, px, cost: cash, fee }; cash -= fee; }
+    else if (k === "x" && ent) { const gross = units*px, fee = gross*FEE; cash = gross - fee; res.fees += ent.fee + fee;
+      res.trades.push({ entT: ent.tm, entPx: ent.px, exT: tm, exPx: px, pnl: cash - ent.cost, fee: ent.fee + fee, entFee: ent.fee, exFee: fee, ret: cash/ent.cost - 1 }); units = 0; ent = null; }
+  }
+  const live = d.livePx, nl = ds.c.length;
+  if (bt.pos > 0 && ent) {
+    const val = units*live;
+    res.pos = { entT: ent.tm, entPx: ent.px, now: live, val, pnl: val - ent.cost, ret: val/ent.cost - 1, bars: nl - ent.i, fee: ent.fee };
+    res.fees += ent.fee; res.value = val;
+  } else res.value = cash;
+  if (bt.target !== bt.pos) res.pending = bt.target > 0 ? "BUY at the next bar open" : "SELL (exit) at the next bar open";
+  const li = nl - 1;
+  if (rule === "arrow_long") { const a = sl(ind.arrow)[li]; if (a > 0) res.sigNow = "▲ up arrow"; else if (a < 0) res.sigNow = "▼ down arrow"; }
+  else if (is.L[li]) res.sigNow = "long signal"; else if (is.S[li]) res.sigNow = "short signal (exit for long-only)";
+  res.justFilled = bt.events.some(([i]) => i === nl - 1) ? bt.events.filter(([i]) => i === nl - 1).map(e => e[1]) : null;
+  for (let i = WARMUP; i < nl; i++) { res.eqT.push(ds.t[i] + BAR); res.eqV.push(coinCap*bt.eq[i]); res.bhV.push(coinCap*ds.c[i]/ds.c[WARMUP]); }   // times = bar close
+  res.liveBh = coinCap*live/ds.c[WARMUP];
+  return res;
+}
+async function loadPaper() {
+  const o = JSON.parse(JSON.stringify(PR)), startMs = wibToMs(o.start), coins = papCoins(o), cc = o.cap/coins.length;
+  BAR = PTF_MS[o.tf] || 9e5;
+  $("pErr").textContent = ""; papRun.n = 0; papRun.total = coins.length; runProgress();
+  if (!isFinite(startMs)) { $("pErr").textContent = "Invalid start time."; return; }
+  if (Date.now() - startMs > 120*864e5) { $("pErr").textContent = "Start time must be within the last 120 days."; return; }
+  const errs = [], out = {};
+  await Promise.all(coins.map(async c => {
+    try { out[c] = paperCoin(await paperRows(c + "USDT", startMs, o.tf), startMs, cc, o.rule); out[c].coin = c; }
+    catch (e) { errs.push(c + ": " + e.message); }
+    finally { papRun.n++; runProgress(); }
+  }));
+  if (errs.length) $("pErr").textContent = "Failed: " + errs.join(", ");
+  papLast = { o, startMs, coins, cc, out }; window.__paper = papLast; renderPaper(); papRun.key = papKey(o); stamp();
+}
+function renderPaper() {
+  if (!papLast) return;
+  const { o, startMs, coins, cc, out } = papLast, list = coins.map(c => out[c]).filter(Boolean);
+  const t0 = Math.ceil(startMs / BAR) * BAR, started = list.some(r => r.started);
+  $("pSetup").textContent = papText(o) + ` · first fill possible at ${WIBS.format(new Date(t0))} WIB` + (o.mode === "pf" ? ` · ${fmtUsd(cc)} per coin` : "");
+  const failed = coins.length - list.length, bal = list.reduce((s, r) => s + r.value, 0) + failed*cc;
+  const pnl = bal - o.cap, fees = list.reduce((s, r) => s + r.fees, 0), bh = list.reduce((s, r) => s + (r.liveBh || cc), 0) + failed*cc;
+  $("pBal").textContent = fmtUsd(bal); $("pBal").className = "big " + cls(pnl);
+  $("pPnl").innerHTML = started ? `<span class="${cls(pnl)}">${pnl >= 0 ? "+" : ""}${fmtUsd(pnl)} (${fmtPct(pnl/o.cap)})</span> since ${WIBS.format(new Date(startMs))} WIB · fees paid ${fmtUsd(fees)} · buy &amp; hold would be ${fmtUsd(bh)}`
+                                : `Not started yet: trading begins with the bar opening ${WIBS.format(new Date(t0))} WIB. Capital ${fmtUsd(o.cap)} in cash.`;
+  // open positions
+  const pos = list.filter(r => r.pos);
+  $("pPos").querySelector("tbody").innerHTML = pos.map(r => `<tr class="${r.pos.bars <= 1 ? "fresh" : ""}"><td><b>${r.coin}</b></td><td>${fmtPx(r.pos.entPx)}<span class="sub">${WIBS.format(new Date(r.pos.entT))}</span></td><td>${fmtPx(r.pos.now)}</td><td class="${cls(r.pos.pnl)}">${fmtUsd(r.pos.pnl)}<span class="sub">${fmtPct(r.pos.ret)}</span></td><td>${r.pos.bars}</td></tr>`).join("");
+  const flat = list.filter(r => !r.pos).map(r => r.coin);
+  $("pCoins").querySelector("tbody").innerHTML = list.map(r => {
+    const a = r.arrow, pnl = r.value - cc;
+    return `<tr class="${a && a.bars <= 1 ? "fresh" : ""}"><td><b>${r.coin}</b><span class="sub">${fmtPx(r.d.livePx)}</span></td><td class="${r.pos ? "pos" : ""}">${r.pos ? "LONG" : r.started ? "cash" : "waiting"}<span class="sub">${r.pending ? (r.pending.startsWith("BUY") ? "BUY next open" : "SELL next open") : (r.exSt > 0 ? "above " : r.exSt < 0 ? "below " : "") + fmtPx(r.exLine)}</span></td>` +
+      `<td class="${a ? (a.dir === "up" ? "pos" : "neg") : ""}">${a ? (a.dir === "up" ? "▲ up" : "▼ down") : "–"}<span class="sub">${a ? WIBS.format(new Date(a.t)).replace(/^\d+ \w+, /, Date.now() - a.t < 864e5 ? "" : "$&") + " · " + a.bars + "b ago" : ""}</span></td>` +
+      `<td class="${cls(pnl)}">${fmtUsd(r.value)}<span class="sub">${pnl >= 0 ? "+" : ""}${fmtUsd(pnl)}</span></td></tr>`;
+  }).join("");
+  $("pCoinsNote").textContent = `Exit Arrows on ${o.tf} closed bars. ▲ up = close crossed above the Exit SSL (HMA15 of highs/lows), ▼ down = close crossed below it. ` + (o.rule === "arrow_long" ? "Rule: long while the latest arrow is ▲, cash while it is ▼ (enters at the start if the latest arrow is already ▲). Position sub-line: price vs the Exit SSL line; b = bars." : o.rule === "state_long" ? "Rule: long while the baseline colour is bull, cash while bear." : "Rule: buy on a fresh baseline crossover, sell on the opposite crossover.");
+  $("pPosNote").innerHTML = (pos.length ? "" : `<div class="empty">No open positions: all cash, waiting for ${o.rule === "arrow_long" ? "a ▲ up Exit Arrow" : "a fresh long signal"}.</div>`) +
+    (flat.length && pos.length ? "Flat (cash): " + flat.join(", ") + ". " : "") + "Unrealised P&amp;L is marked at the live price and includes the entry fee (the exit fee is charged on exit).";
+  // trade log: entries and exits, newest first
+  const ev = [];
+  list.forEach(r => {
+    r.trades.forEach(tr => { ev.push({ t: tr.entT, coin: r.coin, side: "BUY", px: tr.entPx, pnl: null, fee: tr.entFee, kind: "in" }); ev.push({ t: tr.exT, coin: r.coin, side: "SELL", px: tr.exPx, pnl: tr.pnl, fee: tr.exFee, kind: "out" }); });
+    if (r.pos) ev.push({ t: r.pos.entT, coin: r.coin, side: "BUY", px: r.pos.entPx, pnl: null, fee: r.pos.fee, kind: "open" });
+  });
+  ev.sort((a, b) => b.t - a.t || (a.kind === "out" ? -1 : 1));
+  const lastBar = Math.floor(Date.now()/BAR)*BAR;
+  $("pLog").querySelector("tbody").innerHTML = ev.slice(0, 60).map(e => `<tr class="${e.t >= lastBar ? "fresh" : ""}"><td>${WIBS.format(new Date(e.t))}</td><td><b>${e.coin}</b></td><td class="${e.side === "BUY" ? "pos" : "neg"}">${e.side}${e.kind === "open" ? '<span class="sub">open</span>' : ""}</td><td>${fmtPx(e.px)}</td><td class="${e.pnl === null ? "" : cls(e.pnl)}">${e.pnl === null ? "–" : fmtUsd(e.pnl)}<span class="sub">fee ${fmtUsd(e.fee)}</span></td></tr>`).join("");
+  const nT = list.reduce((s, r) => s + r.trades.length, 0);
+  $("pLogNote").innerHTML = ev.length ? `${ev.length > 60 ? "Showing the latest 60 of " + ev.length + " fills. " : ""}${nT} closed trade${nT === 1 ? "" : "s"}. SELL rows show the round-trip $ P&amp;L after both fees; each row shows the fee charged on that fill (0.1%). Fills happen at the bar's open price.` : `<div class="empty">No trades yet. That is normal: ${PR.rule === "arrow_long" ? "an entry needs a ▲ up Exit Arrow" : "an entry needs a new baseline signal"} on ${PR.tf} after the start.</div>`;
+  // new-signal highlight
+  const alerts = [];
+  list.forEach(r => { if (r.pending) alerts.push(`${r.coin}: ${r.sigNow || "signal"} on the last closed bar → paper ${r.pending}`); else if (r.justFilled) alerts.push(`${r.coin}: paper ${r.justFilled.includes("L") ? "BUY" : "SELL"} filled at this bar's open`); });
+  $("pNew").style.display = alerts.length ? "block" : "none"; $("pNew").innerHTML = alerts.length ? "⚡ New signal: " + alerts.join("<br>⚡ ") : "";
+  drawPaperChart(list, o, failed, cc, bal, bh);
+  drawPriceChart(list, o);
+}
+function drawPriceChart(list, o) {
+  if (!list.length) return;
+  if (!pxCoin || !list.some(r => r.coin === pxCoin)) pxCoin = list[0].coin;
+  $("ppxSeg").innerHTML = list.map(r => `<button type="button" data-c="${r.coin}" class="${r.coin === pxCoin ? "on" : ""}">${r.coin}</button>`).join("");
+  $("ppxSeg").querySelectorAll("button").forEach(b => b.onclick = () => { pxCoin = b.dataset.c; drawPriceChart(papLast.coins.map(c => papLast.out[c]).filter(Boolean), papLast.o); });
+  const r = list.find(x => x.coin === pxCoin), d = r.d, ind = r.ind, n = d.t.length;
+  $("ppxTitle").textContent = `${r.coin}/USDT · ${o.tf}`;
+  if (!pxChart) {
+    if (!$("ppx").clientWidth) return;
+    pxChart = LightweightCharts.createChart($("ppx"), { width: $("ppx").clientWidth, height: $("ppx").clientHeight, layout: { background: { color: "#141923" }, textColor: "#8a93a6", fontSize: 11 }, grid: { vertLines: { color: "#1e2533" }, horzLines: { color: "#1e2533" } }, rightPriceScale: { borderColor: "#262e3f" }, timeScale: { borderColor: "#262e3f", timeVisible: true, secondsVisible: false }, crosshair: { mode: 0 }, handleScroll: { vertTouchDrag: false } });
+    pxS.c = pxChart.addCandlestickSeries({ upColor: "#22c55e", downColor: "#ef4444", borderVisible: false, wickUpColor: "#22c55e", wickDownColor: "#ef4444" });
+    const ln = (color, w, st) => pxChart.addLineSeries({ color, lineWidth: w, lineStyle: st || 0, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+    pxS.base = ln("#3b82f6", 2); pxS.s1 = ln("#f59e0b", 1); pxS.s2 = ln("#22d3ee", 1); pxS.ex = ln("#a78bfa", 2, 2);
+    new ResizeObserver(() => pxChart.applyOptions({ width: $("ppx").clientWidth })).observe($("ppx"));
+  }
+  const pf = v => { const a = Math.abs(v); return a >= 1000 ? 2 : a >= 1 ? 4 : a >= 0.01 ? 6 : 10; };
+  const prec = pf(d.livePx || d.c[n-1]); pxS.c.applyOptions({ priceFormat: { type: "price", precision: prec, minMove: Math.pow(10, -prec) } });
+  const T = d.t.map(wibT), lineData = arr => arr.map((v, i) => isFinite(v) ? { time: T[i], value: v } : null).filter(Boolean);
+  pxS.c.setData(d.t.map((_, i) => ({ time: T[i], open: d.o[i], high: d.h[i], low: d.l[i], close: d.c[i] })));
+  pxS.base.setData(lineData(ind.base)); pxS.s1.setData(lineData(ind.ssl1)); pxS.s2.setData(lineData(ind.ssl2)); pxS.ex.setData(lineData(ind.exLine));
+  const mk = [];
+  for (let i = 0; i < n; i++) {
+    if (ind.arrow[i] > 0) mk.push({ time: T[i], position: "belowBar", color: "#22c55e", shape: "arrowUp", text: "▲" });
+    if (ind.arrow[i] < 0) mk.push({ time: T[i], position: "aboveBar", color: "#ef4444", shape: "arrowDown", text: "▼" });
+  }
+  const tIdx = new Map(d.t.map((t, i) => [t, i]));
+  (r.fills || []).forEach(f => { if (tIdx.has(f.t)) mk.push({ time: T[tIdx.get(f.t)], position: f.side === "BUY" ? "belowBar" : "aboveBar", color: "#fde047", shape: "circle", text: f.side === "BUY" ? "B" : "S" }); });
+  mk.sort((x, y) => x.time - y.time); pxS.c.setMarkers(mk);
+  const st = r.started ? r.off + WARMUP : n - 1;
+  const vis = $("ppx").clientWidth < 600 ? 64 : 140; pxChart.timeScale().setVisibleLogicalRange({ from: Math.max(0, Math.max(n - vis, Math.min(st - 10, n - 40))), to: n + 2 });
+  const nA = ind.arrow.slice(st).filter(v => v).length;
+  $("ppxNote").textContent = `${n} closed ${o.tf} bars loaded (1000 warm-up bars before the start). ${nA} Exit Arrow${nA === 1 ? "" : "s"} since the start, ${(r.fills || []).length} simulated fill${(r.fills || []).length === 1 ? "" : "s"}. Arrows sit on the signal bar; fills (B/S) are at the next bar's open. Times in WIB. Drag or pinch to see more history.`;
+}
+function drawPaperChart(list, o, failed, cc, bal, bh) {
+  if (!ppChart) {
+    if (!$("ppc").clientWidth) return;
+    ppChart = LightweightCharts.createChart($("ppc"), { width: $("ppc").clientWidth, height: $("ppc").clientHeight, layout: { background: { color: "#141923" }, textColor: "#8a93a6", fontSize: 11 }, grid: { vertLines: { color: "#1e2533" }, horzLines: { color: "#1e2533" } }, rightPriceScale: { borderColor: "#262e3f" }, timeScale: { borderColor: "#262e3f", timeVisible: true, secondsVisible: false }, crosshair: { mode: 0 }, handleScroll: { vertTouchDrag: false }, localization: { priceFormatter: v => "$" + v.toFixed(2) } });
+    ppBh = ppChart.addLineSeries({ color: "#8a93a6", lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+    ppEq = ppChart.addLineSeries({ color: "#22c55e", lineWidth: 2, priceLineVisible: false });
+    new ResizeObserver(() => ppChart.applyOptions({ width: $("ppc").clientWidth })).observe($("ppc"));
+  }
+  const tm = new Map();   // sum the coins on their common bar-close timeline
+  list.filter(r => r.started).forEach(r => r.eqT.forEach((t, i) => { const e = tm.get(t) || [0, 0, 0]; e[0] += r.eqV[i]; e[1] += r.bhV[i]; e[2]++; tm.set(t, e); }));
+  const k = list.filter(r => r.started).length, rest = (o.cap - k*cc);
+  const pts = [...tm.entries()].filter(([, e]) => e[2] === k).sort((a, b) => a[0] - b[0]);
+  const eq = pts.map(([t, e]) => ({ time: wibT(t), value: e[0] + rest })), bhs = pts.map(([t, e]) => ({ time: wibT(t), value: e[1] + rest }));
+  const nowT = wibT(Math.floor(Date.now()/1000)*1000);
+  if (!eq.length) { const st = wibT(Math.floor(papLast.startMs/1000)*1000); eq.push({ time: st, value: o.cap }); bhs.push({ time: st, value: o.cap }); }   // not started: flat cash line
+  if (eq.length && nowT > eq[eq.length-1].time) { eq.push({ time: nowT, value: bal }); bhs.push({ time: nowT, value: bh }); }   // live mark
+  ppEq.setData(eq); ppBh.setData(bhs); ppChart.timeScale().fitContent();
+}
+function tick() {   // next bar close countdown for the committed paper timeframe
+  const TB = PTF_MS[PR.tf] || 9e5; $("pCdTf").textContent = PR.tf;
+  const now = Date.now(), nx = Math.ceil((now + 1)/TB)*TB, s = Math.max(0, Math.round((nx - now)/1000));
+  $("pCd").textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2, "0")}`; $("pCdAt").textContent = "at " + WIBS.format(new Date(nx)) + " WIB";
+  if (s === 0 && S.auto && S.tab === "pap") setTimeout(() => refreshAll(), 4000);   // pick up the new bar a few seconds after the close
+}
+paperForm(); tick(); setInterval(tick, 1000);
+
+// ---- Run / refresh
+const sigRun = { key: null, n: 0, total: 0 }, detRun = { key: null, n: 0, total: 0 };
+let running = null, runMode = null, runTab = "sig";
+function runKey() { return SETKEYS.map(k => R[k]).join("|"); }
+function setupText(o) { return `${o.tf} · ${o.dir === "ls" ? "Long+Short" : "Long-only"} · ${o.ex === "exitssl" ? "Exit SSL" : "Baseline exit"} · ${fmtUsd(o.cap)}${S.tab === "det" ? " · " + o.coin : ""}`; }
+function isStale() { return S.tab === "bot" ? false : S.tab === "pap" ? papKey(P) !== papKey(PR) : SETKEYS.some(k => S[k] !== R[k]); }
+var autoT = null;
+function autoRun(ms) { clearTimeout(autoT); autoT = setTimeout(() => { if (S.tab !== "bot" && isStale()) runNow(); }, ms || 450); }   // any settings change re-runs by itself
+function markStale() { if (S.tab !== "bot" && isStale()) autoRun(); document.body.classList.toggle("isStale", isStale()); $("runBtn").classList.toggle("attn", isStale()); $("runSetup").textContent = "Showing: " + (S.tab === "pap" ? papText(PR) : setupText(R)); }
+function runProgress() {
+  if (!running) return;
+  if (runTab === "pap") { $("runLab").textContent = papRun.total ? `Running… ${papRun.n}/${papRun.total} coins` : "Running…"; return; }
+  const det = runTab === "det";
+  $("runLab").textContent = det ? (detRun.total ? `Running… ${detRun.n}/${detRun.total} batches` : "Running…") : `Running… ${sigRun.n}/${sigRun.total} coins`;
+}
+function work(mode) {   // mode: "run" (button / first load) or "auto" (60 s refresh)
+  const p = (async () => {
+    runMode = mode; runTab = S.tab; $("runBtn").disabled = true; $("refresh").disabled = true; runProgress();
+    try {
+      if (runTab === "pap") await loadPaper();
+      else if (runTab === "det") await loadDetail(mode === "run" ? true : !pChart);
+      else await loadSignals();
+      if (mode === "run") $("runInfo").textContent = "Last run: " + WIB.format(new Date()) + " WIB";
+    } finally { running = null; $("runBtn").disabled = false; $("refresh").disabled = false; $("runLab").textContent = "↻ Re-run"; markStale(); }
+  })();
+  running = p; return p;
+}
+async function runNow() {
+  if (running) await running.catch(() => {});
+  SETKEYS.forEach(k => R[k] = S[k]);   // commit the pending settings
+  Object.assign(PR, JSON.parse(JSON.stringify(P))); savePaper();
+  markStale();
+  return work("run");
+}
+async function refreshAll() {   // live refresh of what is shown, with the committed settings
+  if (running || S.tab === "bot") return;   // the Real bot tab refreshes itself every 60 s
+  return work("auto");
+}
+function ensureView() {   // a tab switch shows the last run; it only fetches if that view has never been run with these settings
+  if (S.tab === "bot") { RB.show(); return; }
+  if (running) return;
+  const k = runKey();
+  if (S.tab === "pap") { if (papRun.key !== papKey(PR)) work("run"); return; }
+  if ((S.tab === "det" ? detRun.key : sigRun.key) !== k) work("run");
+}
+$("runBtn").onclick = () => runNow();
+$("autoIn").checked = !!S.auto;
+$("autoIn").onchange = () => { S.auto = $("autoIn").checked; save(); };
+S.auto = true; save();   // auto-refresh is always on at page load
+selectCoin(S.coin); setTab(S.tab, false); markStale();
+if (S.tab === "bot") RB.show(); else runNow();   // first load: run with the saved (or default) settings so the page is never empty
+setInterval(() => { if (S.auto && !document.hidden) refreshAll(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (S.auto && !document.hidden) refreshAll(); });
+})();
+</script>
+</body>
+</html>

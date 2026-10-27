@@ -33,6 +33,16 @@ def chart(coin, fills):
             "fills": [{"t": f["t"], "side": f["side"], "px": rp(f["px"]), "why": f.get("why"), "tf": f.get("tf"), "pnl": r(f.get("pnl"), 2)}
                       for f in fills if f.get("t", 0) >= t0]}
 
+def pool_view(ST):
+    p = ST.get("pool")
+    if not p: return None
+    return {"max_positions": p["max_positions"], "cash": p["cash"], "slots_used": p["slots_used"], "free_slots": p["free_slots"],
+            "next_trade_size": r(p["next_trade_size"], 4), "tp_usd": p.get("tp_usd"), "sl_usd": p.get("sl_usd"), "since_ms": p.get("since_ms"), "since_wib": p.get("since_wib"),
+            "slots": [{"coin": s["coin"], "cost": s["cost"], "units": s["units"], "entry_ms": s["entry_t"], "entry": rp(s["entry_px"]), "tp_px": s.get("tp_px"), "sl_px": s.get("sl_px")} for s in p.get("slots", [])],
+            "n_skipped": p.get("n_skipped", 0),
+            "skipped": [{"coin": k["coin"], "ms": k["sig_t"], "wib": wib(k["sig_t"]), "tf": k.get("tf"), "held": k.get("held"), "strength": r(k.get("strength"), 3), "reason": k.get("reason")} for k in p.get("skipped", [])[-20:]][::-1],
+            "switches": [{"at_wib": s["at_wib"], "why": s["why"], "equity_before": r(s["equity_before"], 4), "equity_after": r(s["equity_after"], 4), "fees": r(s["fees"], 4)} for s in p.get("switches", [])]}
+
 def build():
     now = int(time.time() * 1000)
     B = P.build()                                   # the same compact figures the Canvas page uses
@@ -54,7 +64,9 @@ def build():
                  calc={"side": (pos or {}).get("side") if pos else None, "units": pos.get("units") if pos else None, "cost": pos.get("cost") if pos else None,
                        "entry_px": pos.get("entry_px") if pos else None, "entry_fee": pos.get("entry_fee") if pos else None,
                        "cash": s.get("cash"), "value_close": s.get("value_close"), "alloc": s.get("alloc"), "bh_c0": s.get("bh_c0"),
-                       "bh_value_close": s.get("bh_value_close"), "price_at_export": (L.get("coins", {}).get(c["coin"], {}) or {}).get("price")},
+                       "bh_value_close": s.get("bh_value_close"), "price_at_export": (L.get("coins", {}).get(c["coin"], {}) or {}).get("price"),
+                       "tp_px": pos.get("tp_px") if pos else None, "sl_px": pos.get("sl_px") if pos else None},
+                 size=r(pos.get("cost"), 4) if pos else None, tp_px=pos.get("tp_px") if pos else None, sl_px=pos.get("sl_px") if pos else None,
                  upper=rp(ind.get("upper")), lower=rp(ind.get("lower")), ssl2=rp(ind.get("ssl2")), atr_pct=r(ind.get("atr_pct"), 5),
                  last_signal=ind.get("last_signal"), bars_since_signal=ind.get("bars_since_signal"),
                  chart=chart(c["coin"], s.get("fills") or []))
@@ -63,7 +75,8 @@ def build():
     trades = [{"coin": t["coin"], "side": t.get("side"), "in_ms": t.get("entry_t"), "out_ms": t.get("exit_t"),
                "in": (t.get("entry_wib") or wib(t.get("entry_t")) or "")[:16], "out": (t.get("exit_wib") or wib(t.get("exit_t")) or "")[:16],
                "entry": rp(t["entry_px"]), "exit": rp(t["exit_px"]), "pnl": r(t["pnl"], 4), "ret": r(t["ret"], 5), "fee": r(t.get("fee"), 4),
-               "bars": t.get("bars"), "tf": t.get("exit_tf") or t.get("entry_tf"), "mode": t.get("exit_mode") or t.get("entry_mode")}
+               "bars": t.get("bars"), "tf": t.get("exit_tf") or t.get("entry_tf"), "mode": t.get("exit_mode") or t.get("entry_mode"),
+               "reason": t.get("exit_reason") or "ARROW", "size": r(t.get("cost"), 2)}
               for t in tr[-TRADES:]][::-1]
     eq = jsonl("equity.jsonl"); hb = L.get("heartbeat_ms")
     if B.get("balance") is not None and hb and (not eq or hb > eq[-1]["t"]): eq.append({"t": hb, "eq": L.get("balance"), "bh": L.get("bh_balance")})
@@ -84,13 +97,15 @@ def build():
         "start_wib": B.get("start_wib"), "start_ms": ST.get("start_ms"),
         "next_bar_ms": L.get("next_bar_close_ms"), "next_bar_wib": B.get("next_bar_wib"), "last_bar_close_wib": B.get("last_bar_close_wib"),
         "source": B.get("source") or L.get("source"), "prices_ms": L.get("prices_t"),
-        "positions_as_of_ms": hb or now, "live_formula": "value=units*price (long) else value_close; unreal=value-cost; unreal_pct=value/cost-1; bh=alloc*price/bh_c0; balance=sum(value)",
+        "positions_as_of_ms": hb or now, "live_formula": "value=units*price (long) else value_close; unreal=value-cost; unreal_pct=value/cost-1; net_if_sold=units*price*(1-fee)-cost; bh=alloc*price/bh_c0; balance=pool.cash+sum(value) (pool sizing) else sum(value)",
+        "sizing": ST.get("sizing", "coin"), "sizing_text": ST.get("sizing_text"), "fee": (ST.get("rules") or {}).get("fee_per_side"),
+        "pool": pool_view(ST),
         "capital": B["capital"], "balance": B["balance"], "pnl": B["pnl"], "pnl_pct": B["pnl_pct"], "bh": B["bh"], "bh_pct": B["bh_pct"],
         "vs_bh": r(B["balance"] - B["bh"], 2) if B["balance"] is not None and B["bh"] is not None else None,
         "fees": B["fees"], "win_rate": B["win_rate"], "wins": B["wins"], "losses": B["losses"], "n_trades": B["n_trades"],
         "max_dd_pct": B["max_dd_pct"], "max_dd_usd": B["max_dd_usd"], "profit_factor": B["profit_factor"], "exposure_pct": B["exposure_pct"],
         "realised": B["realised"], "rules": B["rules"], "tf_switches": B["tf_switches"], "mode_switches": B["mode_switches"],
-        "coins": coins, "open": B["open"], "pending": S.get("pending", []), "watch_flips": B.get("flips", []),
+        "coins": coins, "open": [dict(o, **{k: (stc.get(o["coin"], {}).get("pos") or {}).get(k) for k in ("tp_px", "sl_px", "cost", "units")}) for o in B["open"]], "pending": S.get("pending", []), "watch_flips": B.get("flips", []),
         "trades": trades, "equity": equity, "events": events,
     }
     return out

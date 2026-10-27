@@ -1,1 +1,1 @@
-{"mode": "arrow_long", "_modes": "arrow_long (Exit Arrows) | state_long (baseline colour) | state_ls | cross_long"}
+{"mode": "arrow_long", "sizing": "pool", "max_positions": 2, "tp_usd": 5, "sl_usd": 2, "_modes": "arrow_long (Exit Arrows) | state_long (baseline colour) | state_ls | cross_long", "_sizing": "pool (shared cash, max_positions open longs, size = cash/free slots) | coin (each coin its own $100 slice)", "_tpsl": "tp_usd / sl_usd: per-position net $ take profit / stop loss (0 or null = off)"}

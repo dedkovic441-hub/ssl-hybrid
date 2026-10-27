@@ -23,3 +23,24 @@ PAPER TRADING ONLY. No exchange keys, no real orders.
    Linux/Mac/WSL: bash start.sh  (stop: bash stop.sh) -> http://127.0.0.1:8811/
    Note: ssl_core.py has data paths set to /workspace/ssl_hybrid; edit DATA/OUT
    at the top to a folder on your machine. Native Windows needs WSL.
+
+4) Pool sizing + TP/SL (since 2026-10-27 17:50 WIB)
+   bot/config.json:
+     "sizing": "pool"      one shared cash pool (the balance carried over);
+                           "coin" = old mode, each coin its own $100 slice
+     "max_positions": 2    at most 2 open longs; trade size = pool cash / free slots
+                           (compounding). More up arrows than free slots on one bar:
+                           the larger (close - exit line)/ATR wins, the rest are
+                           logged "skipped: slots full" (not queued).
+     "tp_usd": 5, "sl_usd": 2   per position, net of the entry fee and the 0.1% exit
+                           fee. Checked live every 5 s from Binance prices; a hit sells
+                           at the TP/SL level price (the observed price is logged) and
+                           is recorded in tpsl_exits.jsonl. After a restart the bar
+                           high/low is used (SL first). After a TP/SL exit the coin
+                           needs a NEW up arrow to re-enter. 0/null = off.
+   A down arrow still sells to the pool. Switching to pool sizing keeps the
+   strongest max_positions longs, sells the rest and resizes the kept ones to
+   equity/max_positions (paper fills at live price, fees charged).
+   Pool -> coin sizing on a running bot is not supported (logged, ignored).
+   Config is read at start: restart (stop.sh, start.sh) after editing.
+   Backtest: python3 bot/bt_pool.py (per-coin $100 vs pool max-2 vs pool + TP5/SL2).
