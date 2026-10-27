@@ -162,7 +162,11 @@ body.onBot .ctl{display:none}
 .skp{font-size:12px;padding:5px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
 .ev .k.skip{background:rgba(245,158,11,.16);color:#fbbf24}.ev .k.tpsl{background:rgba(239,68,68,.16);color:#fca5a5}.ev .k.resize{background:rgba(59,130,246,.18);color:#93c5fd}
 @media(min-width:760px){.slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(min-width:760px){.ccards{grid-template-columns:repeat(5,minmax(0,1fr))}#rbEq{height:260px}#rbPx{height:440px}.cinfo{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:760px){.ccards{grid-template-columns:repeat(6,minmax(0,1fr))}.cc.wide{grid-column:span 3}#rbEq{height:260px}#rbPx{height:440px}.cinfo{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.cc.wide{grid-column:1/-1}
+.cc.mini{padding:7px 9px;border-radius:10px}.cc.mini .n{font-size:14px}.cc.mini .m{margin-top:2px;font-variant-numeric:tabular-nums}.cc.mini .t.m{display:flex}
+.cc.exl{opacity:.55}.szp.sig{background:#1e3a8a;color:#bfdbfe}
+.rs.ARROW_INTRABAR{background:rgba(0,195,255,.18);color:#7dd3fc}.rs.ARROW_CLOSE{background:rgba(138,147,166,.18)}
 </style>
 </head>
 <body>
@@ -500,7 +504,7 @@ window.RB = (function () {
   function pendBanner() {
     const a = Object.entries(pend).filter(([, p]) => p.act);
     $("rbPend").classList.toggle("hide", !a.length);
-    $("rbPend").innerHTML = a.length ? `<b>⏳ Pending (from bars closed after the export):</b><br>` + a.map(([c, p]) => `${esc(c)}: ${p.hit.dir === "up" ? "▲ up" : "▼ down"} arrow on the ${esc(D.tf)} bar opened ${WIBH.format(new Date(p.hit.t))} WIB → the bot will <b>${p.act}</b> at the next open (shows here after its next export).`).join("<br>") + `<div class="meta" style="color:inherit;opacity:.8;margin-top:4px">Hint only: computed in your browser with the same indicator; the balance above is not changed by it.</div>` : "";
+    $("rbPend").innerHTML = a.length ? `<b>⏳ Pending (from bars closed after the export):</b><br>` + a.map(([c, p]) => `${esc(c)}: ${p.hit.dir === "up" ? "▲ up" : "▼ down"} arrow on the ${esc(D.tf)} bar opened ${WIBH.format(new Date(p.hit.t))} WIB → ${D.signal_timing === "intrabar" ? `the bot trades arrows intrabar, so it has probably already <b>${p.act === "BUY" ? "bought (if a slot was free)" : "sold"}</b>` : `the bot will <b>${p.act}</b> at the next open`} (shows here after its next export).`).join("<br>") + `<div class="meta" style="color:inherit;opacity:.8;margin-top:4px">Hint only: computed in your browser with the same indicator; the balance above is not changed by it.</div>` : "";
   }
 
   // ---------- render ----------
@@ -509,7 +513,7 @@ window.RB = (function () {
     $("rbPill").className = "pill " + (st === "RUNNING" ? "run" : st === "PAUSED" ? "pau" : "stp"); $("rbPillT").textContent = st;
     $("rbStalePill").classList.toggle("hide", !stale); $("rbStale").classList.toggle("hide", !stale);
     if (stale) $("rbStale").textContent = `STALE: the last export is ${ageMin >= 120 ? (ageMin / 60).toFixed(1) + " h" : Math.round(ageMin) + " min"} old (expected every 10 min). The box or its publisher may be offline, so the status and positions below may be out of date (prices are still live).`;
-    $("rbMode").innerHTML = `${esc(D.mode)} · <b>${esc(D.tf)}</b> · since ${esc(D.start_wib)} WIB` + (D.pool ? ` <span class="szp">Max positions ${D.pool.max_positions} · pool sizing · ${D.pool.slots_used}/${D.pool.max_positions}</span>` : "");
+    $("rbMode").innerHTML = `${esc(D.mode)} · <b>${esc(D.tf)}</b> · <span class="szp sig">${esc(D.signal_timing_text || "Signals: on candle close")}</span> · since ${esc(D.start_wib)} WIB` + (D.pool ? ` <span class="szp">Max positions ${D.pool.max_positions} · pool sizing · ${D.pool.slots_used}/${D.pool.max_positions}</span>` : "");
     let det = st === "RUNNING" ? "Bot alive" + (num(D.hb_age_s) ? `, heartbeat ${Math.round(D.hb_age_s)} s before the export` : "") : (D.status_detail || "");
     if (D.paused) det = `Paused since ${D.paused.since_wib} WIB: ${D.paused.reason}. No new entries; exits still follow the rules.`;
     $("rbDetail").textContent = det + (D.heartbeat_wib ? ` (last heartbeat ${D.heartbeat_wib.slice(11, 19)} WIB)` : "");
@@ -549,14 +553,22 @@ window.RB = (function () {
 
   function cards() {
     if (!V) return;
-    $("rbCards").innerHTML = V.coins.map(c => {
+    const IB = D.signal_timing === "intrabar", held = V.coins.filter(c => c.pos === "long"), rest = V.coins.filter(c => c.pos !== "long");
+    const mini = c => {
+      const up = c.arrow === "up", la = c.live_arrow > 0 ? `<b class="pos">▲ live</b>` : c.live_arrow < 0 ? `<b class="neg">▼ live</b>` : c.arrow ? `<b class="${up ? "pos" : "neg"}">${up ? "▲" : "▼"}</b>${num(c.bars_since) ? c.bars_since : ""}` : "–";
+      const p = pend[c.coin], pd = p && p.act ? `<div class="pd">⏳ ${IB ? "arrow after export" : "pending " + p.act}</div>` : "";
+      return `<button class="cc mini${c.coin === coin ? " sel" : ""}${c.tradable === false ? " exl" : ""}" data-c="${esc(c.coin)}"><div class="t"><span class="n">${esc(c.coin)}</span><span>${la}</span></div>
+        <div class="t m"><span>${px(c.price)}</span><span class="${num(c.vs_exit_pct) ? (c.vs_exit_pct >= 0 ? "pos" : "neg") : ""}" title="price vs Exit SSL line">${num(c.vs_exit_pct) ? pct(c.vs_exit_pct) : "–"}</span></div>
+        <div class="t m"><span>${c.rank ? "#" + c.rank : ""}</span><span>${c.trades ? c.trades + " tr" : ""}</span></div>${pd}</button>`;
+    };
+    $("rbCards").innerHTML = held.map(c => {
       const up = c.arrow === "up", ar = c.arrow ? `<b class="${up ? "pos" : "neg"}">${up ? "▲" : "▼"}</b> ${esc((c.arrow_wib || "").slice(11))}${num(c.bars_since) ? ` (${c.bars_since} bars)` : ""}` : "no arrow";
       const ex = num(c.vs_exit_pct) ? `<span class="${c.vs_exit_pct >= 0 ? "pos" : "neg"}">${c.vs_exit_pct >= 0 ? "above" : "below"} exit ${pct(c.vs_exit_pct)}</span>` : "";
       const pl = c.pos === "long" ? `<span class="${cls(c.unreal)}">${usd(c.unreal, 1)} (${pct(c.unreal_pct)})</span><br>entry ${px(c.entry)}` + (num(c.tp_px) ? `<br><span class="pos">TP ${px(c.tp_px)}</span> ${pct(c.to_tp, 1)}<br><span class="neg">SL ${px(c.sl_px)}</span> ${pct(c.to_sl, 1)}` : "") : (D.pool ? "in pool cash" : `cash ${usd(c.value)}`);
       const p = pend[c.coin], pd = (c.hit ? `<div class="pd hit">⚠ ${c.hit} hit, bot will close</div>` : "") + (p && p.act ? `<div class="pd">⏳ pending: bot will ${p.act === "BUY" && D.pool && !D.pool.free_slots ? "skip (slots full)" : p.act} at next open</div>` : "");
-      return `<button class="cc${c.coin === coin ? " sel" : ""}" data-c="${esc(c.coin)}"><div class="t"><span class="n">${esc(c.coin)}</span><span class="${c.pos === "long" ? "tagL" : "tagC"}">${c.pos === "long" ? "LONG" : "CASH"}</span></div>
-        <div class="px">${px(c.price)}</div><div class="m">${pl}<br>Last ${ar}<br>${ex}</div>${pd}</button>`;
-    }).join("");
+      return `<button class="cc wide${c.coin === coin ? " sel" : ""}" data-c="${esc(c.coin)}"><div class="t"><span class="n">${esc(c.coin)}${c.rank ? ` <small class="meta">#${c.rank}</small>` : ""}</span><span class="${c.pos === "long" ? "tagL" : "tagC"}">${c.pos === "long" ? "LONG" : "CASH"}</span></div>
+        <div class="px">${px(c.price)}</div><div class="m">${pl}${c.entry_reason ? ` <span class="rs ${esc(c.entry_reason)}">${esc(c.entry_reason)}</span>` : ""}<br>Last ${ar}<br>${ex}</div>${pd}</button>`;
+    }).join("") + rest.map(mini).join("");
     $("rbCards").querySelectorAll(".cc").forEach(b => b.onclick = () => { coin = b.dataset.c; localStorage.setItem("rbCoin", coin); cards(); coinChart(true); });
   }
 
@@ -621,7 +633,7 @@ window.RB = (function () {
   }
 
   function filters() {
-    const sel = $("rbFCoin"), coins = ["ALL", ...D.coins.map(c => c.coin)];
+    const sel = $("rbFCoin"), coins = ["ALL", ...new Set([...D.coins.map(c => c.coin), ...(D.trades || []).map(t => t.coin)])];
     if (sel.options.length !== coins.length) { sel.innerHTML = coins.map(c => `<option value="${esc(c)}">${c === "ALL" ? "All coins" : esc(c)}</option>`).join(""); sel.onchange = () => { fCoin = sel.value; trades(); }; }
     sel.value = fCoin;
     $("rbFRes").innerHTML = [["all", "All"], ["win", "Wins"], ["loss", "Losses"]].map(([k, l]) => `<button data-k="${k}" class="${fRes === k ? "on" : ""}">${l}</button>`).join("");
@@ -629,7 +641,7 @@ window.RB = (function () {
   }
   function trades() {
     const t = (D.trades || []).filter(x => (fCoin === "ALL" || x.coin === fCoin) && (fRes === "all" || (fRes === "win" ? x.pnl > 0 : x.pnl <= 0)));
-    $("rbTr").tBodies[0].innerHTML = t.map(x => `<tr><td>${esc((x.out || "").slice(5))}<span class="sub">${esc((x.in || "").slice(5))}</span></td><td><b>${esc(x.coin)}</b><span class="sub">${esc(x.tf || "")}</span></td><td>${px(x.entry)}<span class="sub">${px(x.exit)}</span></td><td class="${cls(x.pnl)}">${usd(x.pnl, 1)}<span class="sub">${pct(x.ret)}<span class="rs ${esc(x.reason || "ARROW")}">${esc(x.reason || "ARROW")}</span></span></td></tr>`).join("") || `<tr><td colspan="4" class="empty">No closed trades match this filter.</td></tr>`;
+    $("rbTr").tBodies[0].innerHTML = t.map(x => `<tr><td>${esc((x.out || "").slice(5))}<span class="sub">${esc((x.in || "").slice(5))}</span></td><td><b>${esc(x.coin)}</b><span class="sub">${esc(x.tf || "")}</span></td><td>${px(x.entry)}<span class="sub">${px(x.exit)}</span></td><td class="${cls(x.pnl)}">${usd(x.pnl, 1)}<span class="sub">${pct(x.ret)}${x.entry_reason ? `<span class="rs ${esc(x.entry_reason)}">in ${esc(x.entry_reason)}</span>` : ""}<span class="rs ${esc(x.reason || "ARROW")}">${esc(x.reason || "ARROW")}</span></span></td></tr>`).join("") || `<tr><td colspan="4" class="empty">No closed trades match this filter.</td></tr>`;
     const s = t.reduce((a, x) => a + (x.pnl || 0), 0), w = t.filter(x => x.pnl > 0).length;
     $("rbTrNote").innerHTML = `${t.length} trade${t.length === 1 ? "" : "s"} · ${w} win${w === 1 ? "" : "s"} · total <span class="${cls(s)}">${usd(s, 1)}</span> (fees included). Newest first; the export keeps the last 200.`;
   }
@@ -643,14 +655,14 @@ window.RB = (function () {
       return `<div class="slot"><b>${esc(s.coin)}</b> LONG · size <b>${usd(s.cost)}</b> · value ${usd(c.value)} · net if sold <b class="${cls(c.net)}">${usd(c.net, 1)}</b>${c.hit ? ` <b class="rbhit">⚠ ${c.hit} hit, bot will close</b>` : ""}<br>entry ${px(s.entry)} · now ${px(c.price)}<br><span class="pos">TP ${px(s.tp_px)}</span> (${pct(c.to_tp)}) · <span class="neg">SL ${px(s.sl_px)}</span> (${pct(c.to_sl)})</div>`; });
     for (let i = P.slots.length; i < P.max_positions; i++) sl.push(`<div class="slot free">Free slot · the next up arrow buys <b>${usd(P.next_trade_size)}</b> (cash ÷ ${P.free_slots} free slot${P.free_slots > 1 ? "s" : ""})</div>`);
     $("rbSlots").innerHTML = sl.join("");
-    $("rbPoolN").innerHTML = `One shared cash pool since ${esc((P.since_wib || "").slice(0, 16))} WIB. Size per trade = pool cash ÷ free slots. More up arrows than free slots on one bar → the strongest (close − exit line)/ATR wins. TP/SL checked by the bot every 5 s (sold at the level price), catch-up on bar high/low with SL first; after TP/SL a coin needs a new up arrow.` +
+    $("rbPoolN").innerHTML = `One shared cash pool since ${esc((P.since_wib || "").slice(0, 16))} WIB. Size per trade = pool cash ÷ free slots. More up arrows than free slots at once → the strongest (close − exit line)/ATR wins. TP/SL checked by the bot every 5 s (sold at the level price), catch-up on bar high/low with SL first; after TP/SL a coin needs a new up arrow.` +
       (P.switches || []).map(s => `<br>${esc(s.at_wib.slice(5, 16))} ${esc(s.why)}: equity ${usd(s.equity_before)} → ${usd(s.equity_after)} (fee ${usd(s.fees)})`).join("");
     $("rbSkip").innerHTML = (P.skipped || []).map(k => `<div class="skp">${esc((k.wib || "").slice(5))} · <b>${esc(k.coin)}</b> ▲ ${esc(k.tf || "")} skipped: ${esc(k.reason)} (${esc((k.held || []).join("+"))} held, strength ${num(k.strength) ? k.strength.toFixed(2) : "–"})</div>`).join("") || `<div class="meta">None yet (${P.n_skipped || 0}).</div>`;
   }
   function rules() {
     const r = D.rules || {};
     const sw = [...(D.mode_switches || []).map(s => `${s.at} mode ${s.from}→${s.to}`), ...(D.tf_switches || []).map(s => `${s.at} timeframe ${s.from}→${s.to}`)].sort();
-    $("rbRules").innerHTML = `<b>Rules:</b> ${esc(D.mode_text || D.mode)}. Entry: ${esc(r.entry || "–")}. Exit: ${esc(r.exit || "–")}. Fill: ${esc(r.fill || "–")}. Fee ${num(r.fee) ? (r.fee * 100).toFixed(2) + "%" : "–"} per side. Capital ${usd(D.capital)} ${D.pool ? `traded as one pool (max ${D.pool.max_positions} positions, size = cash ÷ free slots, TP +$${D.pool.tp_usd} / SL −$${D.pool.sl_usd} net per position) since ${esc((D.pool.since_wib || "").slice(0, 16))} WIB; before that split $100 per coin over` : "split over"} ${D.coins.map(c => esc(c.coin)).join(", ")} since ${esc(D.start_wib)} WIB. Bot prices: ${esc(D.source || "Binance")}.` +
+    $("rbRules").innerHTML = `<b>Rules:</b> ${esc(D.mode_text || D.mode)}. Entry: ${esc(r.entry || "–")}. Exit: ${esc(r.exit || "–")}. Fill: ${esc(r.fill || "–")}. Fee ${num(r.fee) ? (r.fee * 100).toFixed(2) + "%" : "–"} per side. Capital ${usd(D.capital)} ${D.pool ? `traded as one pool (max ${D.pool.max_positions} positions, size = cash ÷ free slots, TP +$${D.pool.tp_usd} / SL −$${D.pool.sl_usd} net per position) since ${esc((D.pool.since_wib || "").slice(0, 16))} WIB; before that split $100 per coin over` : "split over"} ZEC, NEAR, PEPE, SOL, XRP since ${esc(D.start_wib)} WIB${D.epoch_from_wib ? `; since ${esc(D.epoch_from_wib.slice(0, 16))} WIB the low-cap universe (${(D.universe || []).length} Binance USDT coins, CoinGecko top-${D.exclude_top_mcap || 50} by market cap excluded, re-checked daily): ${(D.universe || []).map(c => esc(c) + (D.universe_ranks && D.universe_ranks[c] ? " #" + D.universe_ranks[c].rank : "")).join(", ")}` : ""}. ${D.signal_timing === "intrabar" ? "Signals intrabar: every ~5 s the Exit SSL is recomputed on the forming candle with the live price as its close; an up arrow buys at once at the live price (ARROW_INTRABAR), a down arrow on a held coin sells at once; max one entry and one exit per coin per candle, no re-entry in the candle of an exit; an arrow that disappears before the close does not undo the fill." : ""} Bot prices: Bot prices: ${esc(D.source || "Binance")}.` +
       (sw.length ? `<br><b>Switches:</b> ${sw.map(esc).join(" · ")}` : "") + `<br>Paper simulation only, not financial advice.`;
   }
 

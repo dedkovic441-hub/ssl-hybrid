@@ -30,7 +30,7 @@ def chart(coin, fills):
     return {"t": d["t"][a:], "o": sl("o"), "h": sl("h"), "l": sl("l"), "c": sl("c"),
             "base": sl("base"), "upper": sl("upper"), "lower": sl("lower"), "ssl1": sl("ssl1"), "ssl2": sl("ssl2"), "exit": sl("exit"),
             "au": ev("AU"), "ad": ev("AD"), "L": ev("L"), "S": ev("S"),
-            "fills": [{"t": f["t"], "side": f["side"], "px": rp(f["px"]), "why": f.get("why"), "tf": f.get("tf"), "pnl": r(f.get("pnl"), 2)}
+            "fills": [{"t": f["t"], "side": f["side"], "px": rp(f["px"]), "why": f.get("why"), "tf": f.get("tf"), "pnl": r(f.get("pnl"), 2), "reason": f.get("reason")}
                       for f in fills if f.get("t", 0) >= t0]}
 
 def pool_view(ST):
@@ -68,6 +68,9 @@ def build():
                        "tp_px": pos.get("tp_px") if pos else None, "sl_px": pos.get("sl_px") if pos else None},
                  size=r(pos.get("cost"), 4) if pos else None, tp_px=pos.get("tp_px") if pos else None, sl_px=pos.get("sl_px") if pos else None,
                  upper=rp(ind.get("upper")), lower=rp(ind.get("lower")), ssl2=rp(ind.get("ssl2")), atr_pct=r(ind.get("atr_pct"), 5),
+                 rank=((ST.get("universe_info") or {}).get(c["coin"]) or {}).get("rank"), mcap_usd=((ST.get("universe_info") or {}).get(c["coin"]) or {}).get("mcap_usd"),
+                 in_universe=s.get("in_universe"), tradable=s.get("tradable"), entry_reason=pos.get("entry_reason") if pos else None,
+                 live_arrow=(ind.get("live") or {}).get("arrow"), live_exit_line=rp((ind.get("live") or {}).get("exit_line")),
                  last_signal=ind.get("last_signal"), bars_since_signal=ind.get("bars_since_signal"),
                  chart=chart(c["coin"], s.get("fills") or []))
         coins.append(c)
@@ -76,7 +79,7 @@ def build():
                "in": (t.get("entry_wib") or wib(t.get("entry_t")) or "")[:16], "out": (t.get("exit_wib") or wib(t.get("exit_t")) or "")[:16],
                "entry": rp(t["entry_px"]), "exit": rp(t["exit_px"]), "pnl": r(t["pnl"], 4), "ret": r(t["ret"], 5), "fee": r(t.get("fee"), 4),
                "bars": t.get("bars"), "tf": t.get("exit_tf") or t.get("entry_tf"), "mode": t.get("exit_mode") or t.get("entry_mode"),
-               "reason": t.get("exit_reason") or "ARROW", "size": r(t.get("cost"), 2)}
+               "reason": t.get("exit_reason") or "ARROW", "entry_reason": t.get("entry_reason"), "size": r(t.get("cost"), 2)}
               for t in tr[-TRADES:]][::-1]
     eq = jsonl("equity.jsonl"); hb = L.get("heartbeat_ms")
     if B.get("balance") is not None and hb and (not eq or hb > eq[-1]["t"]): eq.append({"t": hb, "eq": L.get("balance"), "bh": L.get("bh_balance")})
@@ -100,6 +103,10 @@ def build():
         "positions_as_of_ms": hb or now, "live_formula": "value=units*price (long) else value_close; unreal=value-cost; unreal_pct=value/cost-1; net_if_sold=units*price*(1-fee)-cost; bh=alloc*price/bh_c0; balance=pool.cash+sum(value) (pool sizing) else sum(value)",
         "sizing": ST.get("sizing", "coin"), "sizing_text": ST.get("sizing_text"), "fee": (ST.get("rules") or {}).get("fee_per_side"),
         "pool": pool_view(ST),
+        "signal_timing": ST.get("signal_timing") or cfg.get("signal_timing") or "close", "signal_timing_text": ST.get("signal_timing_text") or "Signals: on candle close",
+        "universe": ST.get("universe") or ST.get("coins_traded"), "exclude_top_mcap": ST.get("exclude_top_mcap"), "excluded": ST.get("excluded"),
+        "universe_ranks": {k: {"rank": v.get("rank"), "mcap_usd": v.get("mcap_usd"), "vol24h_usd": v.get("vol24h_usd")} for k, v in (ST.get("universe_info") or {}).items() if isinstance(v, dict)},
+        "legacy_coins": ST.get("legacy_coins"), "epoch_from_wib": ST.get("epoch_from_wib"), "last_eval_ms": L.get("last_eval_ms") or (L.get("last_eval") or {}).get("ms") if isinstance(L.get("last_eval"), dict) else L.get("last_eval_ms"),
         "capital": B["capital"], "balance": B["balance"], "pnl": B["pnl"], "pnl_pct": B["pnl_pct"], "bh": B["bh"], "bh_pct": B["bh_pct"],
         "vs_bh": r(B["balance"] - B["bh"], 2) if B["balance"] is not None and B["bh"] is not None else None,
         "fees": B["fees"], "win_rate": B["win_rate"], "wins": B["wins"], "losses": B["losses"], "n_trades": B["n_trades"],

@@ -56,11 +56,11 @@ def build():
             "arrow": ind.get("last_arrow"), "arrow_wib": wib(ind.get("last_arrow_t")), "bars_since": ind.get("bars_since_arrow"),
             "exit_state": ind.get("exit_state"), "exit_line": rp(ind.get("exit_line")),
             "ssl1": rp(ind.get("ssl1")), "baseline": rp(ind.get("base")), "color": ind.get("color"),
-            "pending": c.get("pending")})
+            "pending": c.get("pending"), "entry_reason": (pos or {}).get("entry_reason"), "live_arrow": (ind.get("live") or {}).get("arrow")})
     tr = jsonl("trades.jsonl"); tr.sort(key=lambda t: t.get("exit_t", 0))
     trades = [{"coin": t["coin"], "in": t.get("entry_wib", wib(t.get("entry_t")))[5:16], "out": t.get("exit_wib", wib(t.get("exit_t")))[5:16],
                "entry": rp(t["entry_px"]), "exit": rp(t["exit_px"]), "pnl": r(t["pnl"], 2), "ret": r(t["ret"], 5),
-               "tf": t.get("exit_tf") or t.get("entry_tf"), "mode": t.get("exit_mode") or t.get("entry_mode")} for t in tr[-15:]][::-1]
+               "tf": t.get("exit_tf") or t.get("entry_tf"), "mode": t.get("exit_mode") or t.get("entry_mode"), "reason": t.get("exit_reason") or "ARROW", "entry_reason": t.get("entry_reason")} for t in tr[-15:]][::-1]
     eq = jsonl("equity.jsonl")
     hbms = L.get("heartbeat_ms")
     if bal is not None and hbms and (not eq or hbms > eq[-1]["t"]): eq.append({"t": hbms, "eq": bal, "bh": bh})
@@ -73,6 +73,7 @@ def build():
         "updated_wib": time.strftime("%d %b %Y, %H:%M", time.gmtime(time.time() + 7 * 3600)) + " WIB",
         "state": st.get("state"), "state_detail": st.get("detail"), "hb_age_s": r(st.get("heartbeat_age_s"), 0),
         "heartbeat_wib": L.get("heartbeat_wib") or S.get("heartbeat_wib"),
+        "signal_timing": ST.get("signal_timing") or "close", "signal_timing_text": ST.get("signal_timing_text"), "universe": ST.get("universe"),
         "mode": S.get("trade_mode") or ST.get("trade_mode"), "mode_text": S.get("trade_mode_text"),
         "tf": L.get("active_tf") or S.get("active_tf"), "start_wib": (ST.get("start_wib") or "").replace("T", " "),
         "next_bar_wib": L.get("next_bar_close_wib"), "last_bar_close_wib": ST.get("last_bar_close_wib"),

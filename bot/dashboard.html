@@ -28,7 +28,15 @@ main{padding:10px 12px 40px}
 .pos{color:var(--up)}.neg{color:var(--dn)}.mut{color:var(--mut)}
 .sim{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.45);border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:10px}
 .alert{display:none;background:rgba(245,158,11,.15);border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:9px 12px;font-weight:650;margin-bottom:10px}
-.coins{display:grid;grid-template-columns:1fr;gap:10px}
+.coins{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.coin.big{grid-column:1/-1}
+.cc{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:7px 9px;font-size:12px;min-width:0;font-variant-numeric:tabular-nums}
+.cc .r1{display:flex;justify-content:space-between;align-items:baseline;gap:4px}.cc .nm{font-weight:750;font-size:14px}
+.cc .r2{display:flex;justify-content:space-between;gap:4px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden}
+.cc.up{border-color:rgba(0,195,255,.55)}.cc.ex{opacity:.55}.cc.lg{border-color:rgba(245,158,11,.5)}
+.sigb{background:#1e3a8a;color:#bfdbfe}
+.uni{font-size:12px;color:var(--mut);margin:0 0 8px;line-height:1.5}.uni b{color:var(--tx)}
+.rs{font-size:10.5px;padding:1px 5px;border-radius:5px;background:rgba(138,147,166,.18)}.rs.ARROW_INTRABAR{background:rgba(0,195,255,.18);color:#7dd3fc}.rs.TP{background:rgba(34,197,94,.2);color:var(--up)}.rs.SL{background:rgba(239,68,68,.2);color:var(--dn)}.rs.MANUAL{background:rgba(245,158,11,.2);color:var(--warn)}
 .coin{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
 .coin.inpos{border-color:rgba(34,197,94,.55)}.coin.pend{border-color:var(--warn)}
 .coin .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -72,13 +80,13 @@ body.isOff .offline{display:block}body.isOff main{opacity:.5}
 .tfseg button.on{background:#2563eb;color:#fff}.tfseg button.req{background:#1e3a8a;color:#fff;animation:blink 1s infinite}
 .note{font-size:12px;color:var(--mut);margin-top:12px}
 .two{display:grid;grid-template-columns:1fr;gap:10px}
-@media(min-width:700px){.kpis{grid-template-columns:repeat(4,1fr)}.kpi.big{grid-column:span 2}.coins{grid-template-columns:repeat(2,1fr)}}
-@media(min-width:1100px){.kpis{grid-template-columns:repeat(6,1fr)}.coins{grid-template-columns:repeat(5,1fr)}.two{grid-template-columns:1.3fr 1fr}#cc{height:440px}#eqc{height:280px}}
+@media(min-width:700px){.kpis{grid-template-columns:repeat(4,1fr)}.kpi.big{grid-column:span 2}.coins{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1100px){.kpis{grid-template-columns:repeat(6,1fr)}.coins{grid-template-columns:repeat(6,1fr)}.coin.big{grid-column:span 3}.two{grid-template-columns:1.3fr 1fr}#cc{height:440px}#eqc{height:280px}}
 </style></head>
 <body>
 <div class="offline" id="offB">● DASHBOARD OFFLINE: connection to the bot server lost. Retrying every 7 s…</div>
 <header><div class="wrap">
-  <h1>SSL Hybrid <span class="tfN">15m</span> bot <span class="paper">PAPER · SIMULATION</span> <span class="paper mode" id="modeB" style="background:#14532d;color:#bbf7d0">mode …</span></h1>
+  <h1>SSL Hybrid <span class="tfN">15m</span> bot <span class="paper">PAPER · SIMULATION</span> <span class="paper mode" id="modeB" style="background:#14532d;color:#bbf7d0">mode …</span> <span class="paper sigb" id="sigB">Signals: …</span></h1>
   <div class="srow"><span class="spill" id="sPill"><span class="d"></span><span id="sTxt">…</span></span><span class="sdet" id="sDet"></span>
     <span class="tfseg" id="tfSeg" title="Active trading timeframe: click to switch immediately"><span class="tl">Timeframe</span><button data-tf="15m">15m</button><button data-tf="1h">1h</button><button data-tf="4h">4h</button></span><span class="sdet" id="tfMsg"></span>
     <button class="pbtn" id="pauseB" style="display:none">❚❚ Pause entries</button><button class="pbtn" id="resumeB" style="display:none">▶ Resume</button></div>
@@ -92,13 +100,13 @@ body.isOff .offline{display:block}body.isOff main{opacity:.5}
   </div>
 </div></header>
 <main class="wrap">
-  <div class="sim"><b>Paper trading simulation.</b> No real orders, no exchange keys; prices from Binance's public API. Mode <b id="modeT">…</b>. Rules: SSL Hybrid (TradingView v6 default settings) on the <b class="tfN">15m</b> timeframe; the trigger depends on the mode (below). Baseline state (active timeframe, switchable 15m/1h/4h in the header; a switch syncs each coin to the new timeframe's state at once at the live price: bull &amp; flat → BUY, bear &amp; long → SELL, balance carries over): <b>bull</b> = close above the upper channel, <b>bear</b> = close below the lower channel, inside the channel (grey) keeps the previous state. <span id="modeR"></span> Paused: no new positions (entries/re-entries blocked), but closing on an opposite signal still happens. Decisions on bar close, filled at the next bar's open (= first trade of the bar), 0.1% fee per side, full compounding, $500 split equally across ZEC, NEAR, PEPE, SOL, XRP from <span id="startT">2026-10-27 07:52</span> WIB. <b>Warning:</b> the 1-year historical 15m backtest of these signals lost on all 30 coins tested (median −97% long-only crossover), mostly from fees on ~1,500 trades per coin. Earlier mode history is archived in <code>archive/</code>.</div>
+  <div class="sim"><b>Paper trading simulation.</b> No real orders, no exchange keys; prices from Binance's public API. Mode <b id="modeT">…</b>. Rules: SSL Hybrid (TradingView v6 default settings) on the <b class="tfN">15m</b> timeframe; the trigger depends on the mode (below). Baseline state (active timeframe, switchable 15m/1h/4h in the header; a switch syncs each coin to the new timeframe's state at once at the live price: bull &amp; flat → BUY, bear &amp; long → SELL, balance carries over): <b>bull</b> = close above the upper channel, <b>bear</b> = close below the lower channel, inside the channel (grey) keeps the previous state. <span id="modeR"></span> Paused: no new positions (entries/re-entries blocked), but closing on an opposite signal still happens. <span id="sigR">Decisions on bar close, filled at the next bar's open.</span> 0.1% fee per side, full compounding, $500 start capital from <span id="startT">2026-10-27 07:52</span> WIB (ZEC, NEAR, PEPE, SOL, XRP until 19:45 WIB; then the low-cap universe below, balance carried over). <b>Warning:</b> the 1-year historical 15m backtest of these signals lost on all 30 coins tested (median −97% long-only crossover), mostly from fees on ~1,500 trades per coin. Earlier mode history is archived in <code>archive/</code>.</div>
   <div class="alert" id="alert"></div>
   <div class="card"><div class="kpis" id="kpis"></div></div>
   <div class="card" id="poolC" style="display:none"><div class="h">Pool <small id="poolH"></small></div><div id="poolB"></div></div>
   <div class="card"><div class="h">Portfolio equity vs buy &amp; hold <small>USD, at each bar close of the active timeframe + switches + live mark</small></div>
     <div class="legend"><span><i class="ln" style="background:#22c55e"></i>Paper bot</span><span><i class="ln" style="background:#8a93a6"></i>Buy &amp; hold (same coins, same start)</span></div><div id="eqc"></div></div>
-  <div class="coins" id="coins"></div>
+  <div class="card"><div class="h">Coins <small id="uniH"></small></div><div class="uni" id="uni"></div><div class="coins" id="coins"></div></div>
   <div class="card" style="margin-top:10px"><div class="h"><span class="tfN">15m</span> chart <div class="seg" id="cSel"></div></div>
     <div class="legend"><span><i class="ln" style="background:#3b82f6"></i>Baseline HMA60</span><span><i class="ln" style="background:#64748b"></i>Channel ±0.2·EMA60(TR)</span><span><i class="ln" style="background:#a78bfa"></i>Exit SSL HMA15</span><span><i class="ln" style="background:#f472b6"></i>SSL1</span><span><i class="ln" style="background:#facc15"></i>SSL2 JMA5</span><span><i class="ln" style="background:#475569"></i>±ATR (WMA14)</span><span><b style="color:#00c3ff">▲</b><b style="color:#ff0062">▼</b> Exit Arrows (arrow_long triggers) · L/S baseline signals · ◆ signal diamond · B/S paper fills · start</span></div>
     <div id="cc"></div></div>
@@ -108,7 +116,7 @@ body.isOff .offline{display:block}body.isOff main{opacity:.5}
   </div>
   <div class="card"><div class="h">Watchlist: 30 coins, SSL Hybrid state <small>display only, not traded · ● fresh flip on the last closed bar · number = bars since the last baseline signal</small></div>
     <div class="scroll" style="max-height:none"><table id="wl"><thead><tr><th>Coin</th><th>15m</th><th>1h</th><th>4h</th><th>1d</th><th>15m close</th><th>to upper</th><th>to lower</th></tr></thead><tbody></tbody></table></div></div>
-  <div class="note">Paper simulation for research; not financial advice. The bot runs on the Grok Bot box 24/7 under a watchdog and recomputes the whole run from the start time every bar, so restarts don't change results. API: <code>/api/summary</code>, <code>/api/state</code>, <code>/api/equity</code>, <code>/api/trades</code>, <code>/api/events</code>, <code>/api/chart?coin=ZEC</code>.</div>
+  <div class="note">Paper simulation for research; not financial advice. The bot runs on the Grok Bot box 24/7 under a watchdog and records every paper fill in ledger.jsonl (state = frozen earlier run + ledger), so restarts replay the same fills; bars missed while down are caught up on closed bars. API: <code>/api/summary</code>, <code>/api/state</code>, <code>/api/equity</code>, <code>/api/trades</code>, <code>/api/events</code>, <code>/api/chart?coin=ZEC</code>.</div>
 </main>
 <script src="/static/lightweight-charts.js"></script>
 <script>
@@ -195,52 +203,38 @@ document.querySelectorAll("#tfSeg button").forEach(b=>b.onclick = async ()=>{
 });
 function modeUI(){
   const m = ST.trade_mode || "cross_long";
+  $("sigR").textContent = ST.signal_timing === "intrabar" ? "Signals intrabar (live): every ~5 s the Exit SSL is recomputed on the forming candle with the live Binance price as its close; an up arrow BUYS at once at the live price (reason ARROW_INTRABAR), a down arrow on a held coin SELLS at once; max one entry and one exit per coin per candle, no re-entry in the candle of an exit; an arrow only visible on the closed bar fills at the next open (ARROW_CLOSE). The TradingView arrow can disappear before the close; the fill stands." : "Decisions on bar close, filled at the next bar's open (= first trade of the bar).";
   $("modeB").textContent = "mode " + m + (ST.pool ? " · max " + ST.pool.max_positions + " · pool" : ""); $("modeT").textContent = m + " · " + (ST.trade_mode_text || ""); $("modeR").textContent = (MODE_RULE[m] || "") + (ST.pool ? ` Sizing: Max positions ${ST.pool.max_positions} · pool sizing: one shared cash pool (balance carried over ${(ST.pool.since_wib||"").slice(0,16)} WIB); a fresh up arrow on a free slot buys pool cash ÷ free slots; more arrows than free slots on one bar → the strongest (close − exit line)/ATR wins, the rest are skipped (not queued). TP +$${ST.pool.tp_usd} / SL −$${ST.pool.sl_usd} per position, net of fees, checked live every 5 s (sold at the level price; catch-up on bar high/low, SL first); after TP/SL a coin needs a new up arrow.` : "");
 }
 const sideBadge = p => !p ? '<span class="badge neu">FLAT · cash</span>' : (p.side === "short" ? '<span class="badge bear">SHORT</span>' : '<span class="badge bull">LONG</span>');
 function coinCards(){
-  const lc = (LIVE && LIVE.coins) || {};
-  $("coins").innerHTML = ST.coins.map(c => {
-    const I = c.ind || {}, L = lc[c.coin] || {}, p = c.pos, now = L.price ?? I.close, val = L.value ?? c.value_close;
-    const AR = ST.trade_mode === "arrow_long", exd = I.exit_line && I.close ? I.exit_line/I.close-1 : null;
-    const trig = AR ? (p ? {lab:"Sell trigger: close < exit line", d:exd} : {lab:"Buy trigger: close > exit line", d:exd}) : p && p.side === "short" ? {lab:"Cover trigger: close > upper", d:I.dist_upper_pct} : p ? {lab:"Exit trigger: close < lower", d:I.dist_lower_pct} : {lab:"Long trigger: close > upper", d:I.dist_upper_pct};
-    const arw = I.last_arrow ? `<span class="${I.last_arrow==="up"?"pos":"neg"}">${I.last_arrow==="up"?"▲ up (buy)":"▼ down (sell)"}</span> · ${wt(I.last_arrow_t)} · ${I.bars_since_arrow} bar${I.bars_since_arrow===1?"":"s"} ago` : "–";
-    const rng = [I.lower, I.upper, I.close, I.base].filter(isFinite), lo = Math.min(...rng)*0.999, hi = Math.max(...rng)*1.001, f = v => ((v-lo)/(hi-lo)*100).toFixed(1)+"%";
-    return `<div class="coin ${p?"inpos":""} ${c.pending?"pend":""}">
-      <div class="top"><span class="nm">${c.coin}</span>${AR && I.last_arrow ? `<span class="badge ${I.last_arrow==="up"?"bull":"bear"}">${I.last_arrow==="up"?"▲ Up":"▼ Down"} ${I.bars_since_arrow}</span>${I.bars_since_arrow===0?' <span class="badge fl">●</span>':""} ` : ""}${stb(I.color, I.bars_since_signal, I.fresh)}</div>
+  const lc = (LIVE && LIVE.coins) || {}, U = ST.universe_info || {}, X = ST.excluded || {};
+  const rk = c => (U[c]||{}).rank, big = ST.coins.filter(c=>c.pos), small = ST.coins.filter(c=>!c.pos);
+  if ($("sigB")) $("sigB").textContent = ST.signal_timing_text || "Signals: on candle close";
+  $("uniH").textContent = `${(ST.universe||[]).length} low-cap coins · top-${ST.exclude_top_mcap||50} mcap excluded`;
+  $("uni").innerHTML = (ST.universe||ST.coins_traded).map(c=>`<b>${c}</b>${rk(c)?`<span class="mut">#${rk(c)}</span>`:""}${X[c]?' <span class="neg">(top-'+(ST.exclude_top_mcap||50)+', no new entries)</span>':""}`).join(" · ") + `<br>Ranks/mcap: CoinGecko (${ST.epoch_from_wib?ST.epoch_from_wib.slice(0,16)+" WIB":"selection"}) · live arrow = forming ${TF} candle with the live price as close`;
+  const full = c => {
+    const I = c.ind || {}, L = lc[c.coin] || {}, p = c.pos, now = L.price ?? I.close, val = L.value ?? c.value_close, lv = I.live || {};
+    return `<div class="coin big inpos"><div class="top"><span class="nm">${c.coin}${rk(c.coin)?` <small class="mut">#${rk(c.coin)}</small>`:""}</span>${sideBadge(p)}</div>
       <div class="grid2">
-        ${PL ? `<span class="k">Slot size</span><span class="x">${p ? usd(p.cost) : "– (cash in the pool)"}</span>
-        <span class="k">Value</span><span class="x ${p?cls(val-p.cost):""}"><b>${usd(val)}</b> ${p?pct(val/p.cost-1):""}</span>` : `<span class="k">Allocation</span><span class="x">${usd(c.alloc)}</span>
-        <span class="k">Balance</span><span class="x ${cls(val-c.alloc)}"><b>${usd(val)}</b> ${pct(val/c.alloc-1)}</span>`}
-        <span class="k">Buy &amp; hold</span><span class="x">${usd(L.bh_value ?? c.bh_value_close)}</span>
-        <span class="k">Position</span><span class="x">${sideBadge(p)}</span>
-        ${p?`<span class="k">Entry</span><span class="x">${px(p.entry_px)} · ${wt(p.entry_t)}</span>
+        <span class="k">Size → value</span><span class="x">${usd(p.cost)} → <b class="${cls(val-p.cost)}">${usd(val)}</b> ${pct(val/p.cost-1)}</span>
+        <span class="k">Entry</span><span class="x">${px(p.entry_px)} · ${wt(p.entry_t)} · <span class="rs ${p.entry_reason||""}">${p.entry_reason||"ARROW"}</span></span>
         <span class="k">Price now</span><span class="x">${px(now)}</span>
-        <span class="k">Unrealised</span><span class="x ${cls(L.unreal)}">${sgn(L.unreal)} ${pct(L.unreal_pct)}</span>
-        <span class="k">Held</span><span class="x">${dur((Date.now()-p.entry_t)/1000)} · entry ${p.tf||"15m"}</span>
-        ${p.tp_px||p.sl_px?`<span class="k">Net if sold</span><span class="x ${cls(L.net_pnl)}">${sgn(L.net_pnl)}</span>
-        <span class="k">TP / SL</span><span class="x"><span class="pos">${px(p.tp_px)}</span> (${pct(L.to_tp_pct)}) / <span class="neg">${px(p.sl_px)}</span> (${pct(L.to_sl_pct)})</span>`:""}`:`<span class="k">Price now</span><span class="x">${px(now)}</span>`}
-        ${c.pending?`<span class="k" style="color:var(--warn)">Pending</span><span class="x" style="color:var(--warn)">${c.pending}</span>`:""}
-        <span class="k">Trades · fees</span><span class="x">${c.n_trades} · ${usd(c.fees)} · exp ${(c.exposure_pct*100).toFixed(0)}%</span>
-      </div>
-      <div class="bar"><i style="left:${f(I.lower)};width:calc(${f(I.upper)} - ${f(I.lower)});background:rgba(100,116,139,.45)"></i><i style="left:calc(${f(I.close)} - 2px);width:4px;background:#fff"></i></div>
-      <div class="grid2">
-        <span class="k">Close (${TF})</span><span class="x">${px(I.close)}</span>
-        <span class="k">Upper / lower</span><span class="x">${px(I.upper)} / ${px(I.lower)}</span>
-        <span class="k">Baseline</span><span class="x">${px(I.base)} (${pct(I.dist_base_pct)})</span>
-        <span class="k">Exit SSL</span><span class="x"><span class="${I.exit_state>0?"pos":I.exit_state<0?"neg":""}">${I.exit_state>0?"Up":I.exit_state<0?"Down":"–"}</span> · ${px(I.exit_line)}</span>
-        <span class="k">SSL1 (HMA60)</span><span class="x"><span class="${I.ssl1_state>0?"pos":I.ssl1_state<0?"neg":""}">${I.ssl1_state>0?"Up":I.ssl1_state<0?"Down":"–"}</span> · ${px(I.ssl1)}</span>
-        <span class="k">SSL2 (JMA5)</span><span class="x"><span class="${I.ssl2_state>0?"pos":I.ssl2_state<0?"neg":""}">${I.ssl2_state>0?"Up":I.ssl2_state<0?"Down":"–"}</span> · ${px(I.ssl2)}${I.ssl2_cont?` · <span class="${I.ssl2_cont==="buy"?"pos":"neg"}">${I.ssl2_cont} cont.</span>`:""}</span>
-        <span class="k">ATR14 (WMA)</span><span class="x">${px(I.atr14)} (${pct(I.atr_pct)})${I.diamond?' · <span style="color:#fff">◆ diamond</span>':""}</span>
-        <span class="k">+ATR / −ATR</span><span class="x">${px(I.atr_up)} / ${px(I.atr_lo)}</span>
-        <span class="k">Last arrow</span><span class="x">${arw}</span>
-        <span class="k">${trig.lab}</span><span class="x"><b>${pct(trig.d)}</b></span>
-        <span class="k">Last signal</span><span class="x">${I.last_signal?`${I.last_signal==="long"?"▲ long":"▼ short"} · ${wt(I.last_signal_t)}`:"–"}</span>
-      </div></div>`;
-  }).join("");
+        <span class="k">Net if sold</span><span class="x ${cls(L.net_pnl)}"><b>${sgn(L.net_pnl)}</b></span>
+        <span class="k">TP / SL</span><span class="x"><span class="pos">${px(p.tp_px)}</span> (${pct(L.to_tp_pct)}) / <span class="neg">${px(p.sl_px)}</span> (${pct(L.to_sl_pct)})</span>
+        <span class="k">Exit line (live)</span><span class="x">${px(lv.exit_line ?? I.exit_line)} · ${now && (lv.exit_line??I.exit_line) ? pct(now/(lv.exit_line??I.exit_line)-1) : "–"}</span>
+        <span class="k">Held</span><span class="x">${dur((Date.now()-p.entry_t)/1000)}${c.in_universe===false?' · <span class="mut">legacy coin, exit only</span>':""}</span>
+      </div></div>`; };
+  const mini = c => {
+    const I = c.ind || {}, L = lc[c.coin] || {}, lv = I.live || {}, now = L.price ?? I.close, ex = lv.exit_line ?? I.exit_line, d = now && ex ? now/ex-1 : null;
+    const ar = lv.arrow > 0 ? '<span class="pos">▲ live</span>' : lv.arrow < 0 ? '<span class="neg">▼ live</span>' : I.last_arrow ? `<span class="${I.last_arrow==="up"?"pos":"neg"}">${I.last_arrow==="up"?"▲":"▼"}${I.bars_since_arrow}</span>` : "–";
+    return `<div class="cc ${lv.arrow>0?"up":""} ${c.tradable===false?"ex":""}"><div class="r1"><span class="nm">${c.coin}</span><span>${ar}</span></div>
+      <div class="r2"><span>${px(now)}</span><span class="${cls(d)}" title="price vs Exit SSL line">${d==null?"–":(d>=0?"+":"")+(d*100).toFixed(2)+"%"}</span></div>
+      <div class="r2"><span>${rk(c.coin)?"#"+rk(c.coin):""}</span><span>${c.n_trades?c.n_trades+" tr "+sgn(c.pnl_realised):""}</span></div></div>`; };
+  $("coins").innerHTML = big.map(full).join("") + small.map(mini).join("");
 }
 function tradeLog(trades){
-  $("tl").querySelector("tbody").innerHTML = trades.slice().reverse().map(t=>`<tr><td>${wt(t.exit_t)}</td><td><b>${t.coin}</b>${t.side==="short"?' <span class="badge bear">short</span>':''}<div class="mut" style="font-size:11px">${t.entry_tf?(t.entry_tf===t.exit_tf?t.entry_tf:t.entry_tf+"→"+t.exit_tf):"15m"} · ${t.entry_mode&&t.exit_mode&&t.entry_mode!==t.exit_mode?t.entry_mode+"→"+t.exit_mode:(t.exit_mode||"state_long")}</div></td><td>${px(t.entry_px)} → ${px(t.exit_px)}<div class="mut" style="font-size:11px">in ${wt(t.entry_t)}</div></td><td>${t.bars}<div><span class="rs ${t.exit_reason||"ARROW"}">${t.exit_reason||"ARROW"}</span></div></td><td class="${cls(t.pnl)}">${sgn(t.pnl)}</td><td class="${cls(t.ret)}">${pct(t.ret)}</td><td>${usd(t.fee,3)}</td></tr>`).join("");
+  $("tl").querySelector("tbody").innerHTML = trades.slice().reverse().map(t=>`<tr><td>${wt(t.exit_t)}</td><td><b>${t.coin}</b>${t.side==="short"?' <span class="badge bear">short</span>':''}<div class="mut" style="font-size:11px">${t.entry_tf?(t.entry_tf===t.exit_tf?t.entry_tf:t.entry_tf+"→"+t.exit_tf):"15m"} · ${t.entry_mode&&t.exit_mode&&t.entry_mode!==t.exit_mode?t.entry_mode+"→"+t.exit_mode:(t.exit_mode||"state_long")}</div></td><td>${px(t.entry_px)} → ${px(t.exit_px)}<div class="mut" style="font-size:11px">in ${wt(t.entry_t)}</div></td><td>${t.bars}<div>${t.entry_reason?`<span class="rs ${t.entry_reason}">in ${t.entry_reason}</span> `:""}<span class="rs ${t.exit_reason||"ARROW"}">${t.exit_reason||"ARROW"}</span></div></td><td class="${cls(t.pnl)}">${sgn(t.pnl)}</td><td class="${cls(t.ret)}">${pct(t.ret)}</td><td>${usd(t.fee,3)}</td></tr>`).join("");
   const op = ST.coins.filter(c=>c.pos);
   $("tlN").textContent = `${trades.length} closed${op.length?" · "+op.length+" open":""}`;
   $("tlE").innerHTML = trades.length ? "" : (ST.trade_mode === "arrow_long" ? "No closed trades yet: positions are bought after an up Exit Arrow and sold after a down arrow." : ST.trade_mode === "cross_long" ? "No closed trades yet. Entries need a fresh crossover above the upper channel after the start; exits need a crossover below the lower channel." : "No closed trades yet: positions follow the baseline state and close when the state flips.") + (op.length ? " Open positions are shown on the coin cards." : "");
@@ -272,7 +266,7 @@ async function chart(force){
   (d.D||[]).forEach(t=>mk.push({time:wibT(t),position:"aboveBar",color:"#ffffff",shape:"circle",size:0.5,text:"◆"}));
   d.L.forEach(t=>mk.push({time:wibT(t),position:"belowBar",color:"#22c55e",shape:"circle",size:0.5,text:"L"}));
   d.S.forEach(t=>mk.push({time:wibT(t),position:"aboveBar",color:"#ef4444",shape:"circle",size:0.5,text:"S"}));
-  (d.fills||[]).forEach(f=>{ if (f.t>=d.t[0]) mk.push({time:wibT(f.t),position:(f.side==="BUY"||f.side==="COVER")?"belowBar":"aboveBar",color:"#f59e0b",shape:"square",text:{BUY:"B",SELL:"S "+sgn(f.pnl),SHORT:"SH",COVER:"C "+sgn(f.pnl)}[f.side]||f.side}); });
+  (d.fills||[]).forEach(f=>{ if (f.t>=d.t[0]) mk.push({time:wibT(f.t),position:(f.side==="BUY"||f.side==="COVER")?"belowBar":"aboveBar",color:"#f59e0b",shape:"square",text:{BUY:"B"+(f.reason==="ARROW_INTRABAR"?"·live":""),SELL:"S "+sgn(f.pnl)+(f.reason&&f.reason!=="ARROW"?" "+f.reason.replace("ARROW_INTRABAR","live"):""),SHORT:"SH",COVER:"C "+sgn(f.pnl)}[f.side]||f.side}); });
   const st = Math.floor(ST.first_fill_ms/BAR)*BAR; if (st>=d.t[0]) mk.push({time:wibT(st),position:"aboveBar",color:"#3b82f6",shape:"circle",text:"start"});
   mk.sort((x,y)=>x.time-y.time); sC.setMarkers(mk);
   (window.__pl||[]).forEach(l=>{ try { sC.removePriceLine(l); } catch(e){} }); window.__pl = [];
@@ -281,6 +275,7 @@ async function chart(force){
   cChart.timeScale().setVisibleLogicalRange({from:Math.max(0,d.t.length-130),to:d.t.length+3});
 }
 function selector(){
+  if (!ST.coins_traded.includes(sel)) { const h = ST.coins.find(c=>c.pos); sel = h ? h.coin : ST.coins_traded[0]; }
   $("cSel").innerHTML = ST.coins_traded.map(c=>`<button class="${c===sel?"on":""}" data-c="${c}">${c}</button>`).join("");
   $("cSel").querySelectorAll("button").forEach(b=>b.onclick=()=>{sel=b.dataset.c;localStorage.setItem("bot_coin",sel);selector();chart(true);});
 }

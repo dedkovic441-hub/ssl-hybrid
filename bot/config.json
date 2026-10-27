@@ -1,1 +1,194 @@
-{"mode": "arrow_long", "sizing": "pool", "max_positions": 2, "tp_usd": 5, "sl_usd": 2, "_modes": "arrow_long (Exit Arrows) | state_long (baseline colour) | state_ls | cross_long", "_sizing": "pool (shared cash, max_positions open longs, size = cash/free slots) | coin (each coin its own $100 slice)", "_tpsl": "tp_usd / sl_usd: per-position net $ take profit / stop loss (0 or null = off)"}
+{
+ "mode": "arrow_long",
+ "sizing": "pool",
+ "max_positions": 2,
+ "tp_usd": 5,
+ "sl_usd": 5,
+ "_modes": "arrow_long (Exit Arrows) | state_long (baseline colour) | state_ls | cross_long",
+ "_sizing": "pool (shared cash, max_positions open longs, size = cash/free slots) | coin (each coin its own $100 slice)",
+ "_tpsl": "tp_usd / sl_usd: per-position net $ take profit / stop loss (0 or null = off)",
+ "signal_timing": "intrabar",
+ "coins": [
+  "NIL",
+  "HUMA",
+  "CHIP",
+  "FET",
+  "DASH",
+  "INJ",
+  "ZRO",
+  "CELO",
+  "TRUMP",
+  "TIA",
+  "SYN",
+  "STRK",
+  "FIL",
+  "ETHFI",
+  "XPL",
+  "REZ",
+  "BABY",
+  "ZAMA",
+  "APT",
+  "OSMO",
+  "AERO",
+  "CAKE"
+ ],
+ "exclude_top_mcap": 50,
+ "_signal_timing": "intrabar (indicator on the forming candle with the live price, fills at once) | close (closed bar, fill at next open)",
+ "_coins": "universe, Binance spot USDT pairs; selected 2026-10-27 19:40 WIB: CoinGecko /coins/markets rank > 50 and mcap < $1B, Binance 24h quote volume >= $3.4M, >= 60 days of history, no stables/leveraged/wrapped/stock tokens; top 22 by volume",
+ "_universe": {
+  "NIL": {
+   "rank": 458,
+   "mcap_usd": 48447394,
+   "vol24h_usd": 21983464,
+   "name": "Nillion",
+   "days": 583
+  },
+  "HUMA": {
+   "rank": 465,
+   "mcap_usd": 48133801,
+   "vol24h_usd": 17248891,
+   "name": "Huma Finance",
+   "days": 520
+  },
+  "CHIP": {
+   "rank": 267,
+   "mcap_usd": 106292626,
+   "vol24h_usd": 13624437,
+   "name": "USD.AI",
+   "days": 190
+  },
+  "FET": {
+   "rank": 121,
+   "mcap_usd": 406624445,
+   "vol24h_usd": 10012021,
+   "name": "Artificial Superintelligence Alliance",
+   "days": 2799
+  },
+  "DASH": {
+   "rank": 88,
+   "mcap_usd": 713407783,
+   "vol24h_usd": 9570763,
+   "name": "Dash",
+   "days": 2771
+  },
+  "INJ": {
+   "rank": 84,
+   "mcap_usd": 793740946,
+   "vol24h_usd": 8637565,
+   "name": "Injective",
+   "days": 2198
+  },
+  "ZRO": {
+   "rank": 91,
+   "mcap_usd": 675271290,
+   "vol24h_usd": 8164991,
+   "name": "LayerZero",
+   "days": 860
+  },
+  "CELO": {
+   "rank": 469,
+   "mcap_usd": 47670478,
+   "vol24h_usd": 7832700,
+   "name": "Celo",
+   "days": 2122
+  },
+  "TRUMP": {
+   "rank": 117,
+   "mcap_usd": 474672121,
+   "vol24h_usd": 7445215,
+   "name": "Official Trump",
+   "days": 647
+  },
+  "TIA": {
+   "rank": 107,
+   "mcap_usd": 520202325,
+   "vol24h_usd": 6651353,
+   "name": "Celestia",
+   "days": 1093
+  },
+  "SYN": {
+   "rank": 527,
+   "mcap_usd": 39587465,
+   "vol24h_usd": 6500087,
+   "name": "Synapse",
+   "days": 1344
+  },
+  "STRK": {
+   "rank": 123,
+   "mcap_usd": 355604488,
+   "vol24h_usd": 6481920,
+   "name": "Starknet",
+   "days": 981
+  },
+  "FIL": {
+   "rank": 86,
+   "mcap_usd": 752302304,
+   "vol24h_usd": 5340152,
+   "name": "Filecoin",
+   "days": 2204
+  },
+  "ETHFI": {
+   "rank": 94,
+   "mcap_usd": 667236508,
+   "vol24h_usd": 5319262,
+   "name": "Ether.fi",
+   "days": 954
+  },
+  "XPL": {
+   "rank": 130,
+   "mcap_usd": 347379040,
+   "vol24h_usd": 5273614,
+   "name": "Plasma",
+   "days": 398
+  },
+  "REZ": {
+   "rank": 466,
+   "mcap_usd": 47815726,
+   "vol24h_usd": 4760138,
+   "name": "Renzo",
+   "days": 911
+  },
+  "BABY": {
+   "rank": 354,
+   "mcap_usd": 69250635,
+   "vol24h_usd": 4269799,
+   "name": "Babylon",
+   "days": 566
+  },
+  "ZAMA": {
+   "rank": 183,
+   "mcap_usd": 187049640,
+   "vol24h_usd": 4262646,
+   "name": "Zama",
+   "days": 268
+  },
+  "APT": {
+   "rank": 97,
+   "mcap_usd": 606552084,
+   "vol24h_usd": 4121150,
+   "name": "Aptos",
+   "days": 1470
+  },
+  "OSMO": {
+   "rank": 498,
+   "mcap_usd": 43167633,
+   "vol24h_usd": 3914639,
+   "name": "Osmosis",
+   "days": 1461
+  },
+  "AERO": {
+   "rank": 102,
+   "mcap_usd": 570258289,
+   "vol24h_usd": 3848864,
+   "name": "Aerodrome Finance",
+   "days": 103
+  },
+  "CAKE": {
+   "rank": 93,
+   "mcap_usd": 667443084,
+   "vol24h_usd": 3610621,
+   "name": "PancakeSwap",
+   "days": 2077
+  }
+ }
+}

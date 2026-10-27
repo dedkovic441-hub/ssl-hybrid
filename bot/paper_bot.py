@@ -559,7 +559,7 @@ def run_pool(store, start_ms, cap, coins, now, pauses, beat, segs, exits=()):
             # 1) intrabar TP / SL inside the bar [bo, ct)
             for c in sorted(list(P)):
                 lx = logged(c, max(bo, prev), ct)
-                if lx: sell(c, lx["t"], lx["px"], tf, f"{lx['kind']} (live, trigger level)", lx["kind"], lx["t"], md, lx.get("observed")); continue
+                if lx: sell(c, lx["t"], lx["px"], tf, (f"{lx['kind']} (live, trigger level)" if lx['kind'] in ("TP", "SL") else f"{lx['kind']} close (live price)"), lx["kind"], lx["t"], md, lx.get("observed")); continue
                 if not (tp or sl) or c not in D: continue
                 i = D[c]["tix"].get(bo)
                 if i is None or bo < P[c]["lv_from"]: continue
@@ -605,7 +605,7 @@ def run_pool(store, start_ms, cap, coins, now, pauses, beat, segs, exits=()):
         hi = b if b is not None else now + 1
         for c in sorted(list(P)):
             lx = logged(c, prev, hi)
-            if lx: sell(c, lx["t"], lx["px"], tf, f"{lx['kind']} (live, trigger level)", lx["kind"], lx["t"], md, lx.get("observed"))
+            if lx: sell(c, lx["t"], lx["px"], tf, (f"{lx['kind']} (live, trigger level)" if lx['kind'] in ("TP", "SL") else f"{lx['kind']} close (live price)"), lx["kind"], lx["t"], md, lx.get("observed"))
     # results in the per-coin shape the daemon already writes
     out = PoolOut(); B = TFS[tf]
     for c in coins:
@@ -901,7 +901,7 @@ class Bot:
             for f in r["fills"]:
                 ft = self.first_trade_px(c, f["t"]); f["first_trade_px"] = ft
                 f["slippage_bps"] = ((ft / f["px"] - 1) * 1e4) if ft else None
-                self.event("fill", f"{c}: paper {('RESIZE ' if f.get('kind') == 'resize' else '') + f['side']}{(' ' + f['reason']) if f.get('reason') in ('TP', 'SL') else ''}{(' $' + format(f['size'], '.2f')) if f.get('size') else ''} [{f.get('tf', '15m')}{' · ' + f['why'] if f.get('why') else ''}] at {f['px']:.6g} ({'live price' if str(f.get('why','')).startswith(('switch', 'resize')) else ('trigger level' if f.get('reason') in ('TP', 'SL') else 'bar open')} {ms_wib(f['t'])} WIB; first trade {ft if ft is not None else 'n/a'}, slippage {f['slippage_bps'] if f['slippage_bps'] is not None else 'n/a'} bps), fee ${f['fee']:.4f}" + (f", P&L ${f['pnl']:.2f}" if 'pnl' in f else ""),
+                self.event("fill", f"{c}: paper {('RESIZE ' if f.get('kind') == 'resize' else '') + f['side']}{(' ' + f['reason']) if f.get('reason') in ('TP', 'SL', 'MANUAL') else ''}{(' $' + format(f['size'], '.2f')) if f.get('size') else ''} [{f.get('tf', '15m')}{' · ' + f['why'] if f.get('why') else ''}] at {f['px']:.6g} ({'live price' if str(f.get('why','')).startswith(('switch', 'resize')) else ('trigger level' if f.get('reason') in ('TP', 'SL') else ('live price' if f.get('reason') == 'MANUAL' else 'bar open'))} {ms_wib(f['t'])} WIB; first trade {ft if ft is not None else 'n/a'}, slippage {f['slippage_bps'] if f['slippage_bps'] is not None else 'n/a'} bps), fee ${f['fee']:.4f}" + (f", P&L ${f['pnl']:.2f}" if 'pnl' in f else ""),
                            key=f"f|{c}|{f['t']}|{f['side']}" + ("|rs" if f.get("kind") == "resize" else ""), reason=f.get("reason"), tf=f.get("tf", "15m"), coin=c, side=f["side"], px=f["px"], fill_t=f["t"], first_trade_px=ft, slippage_bps=f["slippage_bps"])
             for sk in r.get("skipped", []):
                 if sk.get("reason") == "slots full":
@@ -1062,7 +1062,11 @@ def main():
     h = RotatingFileHandler(os.path.join(a.dir, "bot.log"), maxBytes=5_000_000, backupCount=3)
     logging.basicConfig(level=logging.INFO, handlers=[h, logging.StreamHandler(sys.stdout)], format="%(asctime)s WIB %(levelname)s %(message)s")
     logging.Formatter.converter = lambda *x: datetime.now(WIB).timetuple()
-    b = Bot(a.dir, a.start, a.capital, a.coins.split(","), a.mode, cfg)
+    if cfg.get("signal_timing") and a.mode == "arrow_long" and cfg.get("sizing") == "pool" and cfg.get("coins"):
+        import live_engine   # live pool engine: intrabar/close signals, config-driven universe (see live_engine.py)
+        b = live_engine.LiveBot(a.dir, a.start, a.capital, [c.upper() for c in cfg["coins"]], a.mode, cfg)
+    else:
+        b = Bot(a.dir, a.start, a.capital, a.coins.split(","), a.mode, cfg)
     if a.no_watch: b.update_watch = lambda now: None
     if a.once: b.check_mode() or b.process_bar(); print(json.dumps(json.load(open(os.path.join(a.dir, "summary.json"))), indent=1)); return
     b.loop()

@@ -83,7 +83,8 @@ class H(BaseHTTPRequestHandler):
                 return self.js(ev[-n:])
             if p == "/api/chart":
                 c = q.get("coin", [""])[0].upper()
-                if c not in COINS: return self.send(400, '{"error":"unknown coin"}')
+                st0 = jload("state.json", {}) or {}
+                if c not in COINS | set(st0.get("coins_traded") or []) | set(st0.get("universe") or []): return self.send(400, '{"error":"unknown coin"}')
                 return self.js(jload(f"data/chart_{c}.json", {}))
             if p == "/healthz": return self.js(status())
             return self.send(404, '{"error":"not found"}')
