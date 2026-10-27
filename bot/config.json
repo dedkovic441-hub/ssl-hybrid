@@ -1,11 +1,11 @@
 {
  "mode": "arrow_long",
  "sizing": "pool",
- "max_positions": 2,
+ "max_positions": 5,
  "tp_usd": 5,
  "sl_usd": 5,
  "_modes": "arrow_long (Exit Arrows) | state_long (baseline colour) | state_ls | cross_long",
- "_sizing": "pool (shared cash, max_positions open longs, size = cash/free slots) | coin (each coin its own $100 slice)",
+ "_sizing": "pool (shared cash, max_positions open longs, entry size = equity/max_positions capped at cash; since 2026-10-27 20:3x WIB, before: cash/free slots) | coin (each coin its own $100 slice)",
  "_tpsl": "tp_usd / sl_usd: per-position net $ take profit / stop loss (0 or null = off)",
  "signal_timing": "intrabar",
  "coins": [

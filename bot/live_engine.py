@@ -20,7 +20,12 @@ config.json:
   coins            the universe (Binance spot USDT pairs)
   exclude_top_mcap 50: coins ranked 1..N by CoinGecko /coins/markets are dropped from NEW entries (checked at start + every 24 h;
                    a held coin still exits on its rules)
-  max_positions, tp_usd, sl_usd as before (TP/SL net of the entry fee and the 0.1% exit fee; live 5 s checks fill at the level;
+  max_positions  open-long slots. Entry size = equity / max_positions (equity = cash + held coins at the live price),
+                 capped at the pool cash (from 2026-10-27 20:3x WIB; before: cash / free slots). When max_positions changes, the
+                 bot at start trims held positions above equity / max_positions with a paper partial sell (ledger side RESIZE,
+                 live price, 0.1% fee; entry price kept, cost basis + entry fee reduced pro rata, TP/SL recomputed for the smaller
+                 size) and logs a live_child segment (from_max_positions -> max_positions) + a mode_switch event.
+  tp_usd, sl_usd as before (TP/SL net of the entry fee and the 0.1% exit fee; live 5 s checks fill at the level;
                    catch-up on bar high/low, SL first).
 Data: one /api/v3/ticker/price call for all symbols every 5 s; klines at candle boundaries + one coin's forming kline every 5 s
 (round robin), i.e. far below Binance's 6000 weight/min.
@@ -125,6 +130,16 @@ class LiveBot(pb.Bot):
                 tp, sl = tpsl_levels(u, f["amt"], f.get("tp_usd"), f.get("sl_usd"))
                 P[c] = {"units": u, "cost": f["amt"], "entry_t": f["t"], "entry_px": f["px"], "fee": fee, "bar_t": f["bar_t"], "tf": f.get("tf"),
                         "reason": f.get("reason"), "tp_px": tp, "sl_px": sl, "tp_usd": f.get("tp_usd"), "sl_usd": f.get("sl_usd")}
+            elif f["side"] == "RESIZE" and c in P:
+                p = P[c]; u = min(f["units"], p["units"]); k = u / p["units"]; gross = u * f["px"]; fee = gross * FEE; pr = gross - fee; cash += pr; fees += fee
+                cpart = p["cost"] * k; fpart = p["fee"] * k
+                p["units"] -= u; p["cost"] -= cpart; p["fee"] -= fpart
+                p["tp_px"], p["sl_px"] = tpsl_levels(p["units"], p["cost"], p.get("tp_usd"), p.get("sl_usd"))
+                p.setdefault("resized", []).append({"t": f["t"], "units": u, "px": f["px"]})
+                trades.append({"coin": c, "side": "long", "entry_t": p["entry_t"], "entry_px": p["entry_px"], "exit_t": f["t"], "exit_px": f["px"], "cost": cpart,
+                               "proceeds": pr, "pnl": pr - cpart, "ret": pr / cpart - 1 if cpart else 0.0, "fee": fpart + fee, "entry_fee": fpart, "exit_fee": fee,
+                               "bars": round((f["t"] - p["entry_t"]) / pb.BAR, 2), "entry_tf": p["tf"], "exit_tf": f.get("tf"), "entry_mode": "arrow_long", "exit_mode": "arrow_long",
+                               "exit_reason": "RESIZE", "entry_reason": p.get("reason"), "sizing": "pool", "units": u, "timing": f.get("timing"), "partial": True})
             elif c in P:
                 p = P.pop(c); gross = p["units"] * f["px"]; fee = gross * FEE; pr = gross - fee; cash += pr; fees += fee
                 trades.append({"coin": c, "side": "long", "entry_t": p["entry_t"], "entry_px": p["entry_px"], "exit_t": f["t"], "exit_px": f["px"], "cost": p["cost"],
@@ -152,6 +167,42 @@ class LiveBot(pb.Bot):
             tr = self.trades1[-1]
             self.event("fill", f"{c}: paper SELL [{self.tf} · {reason}] at {px:.6g} ({why}) {ms_wib(t)} WIB, fee ${tr['exit_fee']:.4f}, P&L ${tr['pnl']:+.2f}",
                        key=f"f|{c}|{t}|SELL", coin=c, side="SELL", px=px, fill_t=t, reason=reason, tf=self.tf, pnl=tr["pnl"])
+    def entry_amt(self, prices=None):
+        """Entry size: equity / max_positions (equity at the live price), capped at the pool cash."""
+        pr = dict(self.live or {}); pr.update(prices or {})
+        return max(0.0, min(self.cash, self.equity_now(pr) / self.max_pos))
+    def check_slots(self):
+        """max_positions in config differs from the active segment -> new live_child segment; held positions above
+        equity / max_positions are trimmed (paper partial sell RESIZE at the live price, 0.1% fee)."""
+        last = self.ep_segs[-1] if self.ep_segs else self.ep
+        old = int(last.get("max_positions") or pb.POOL_DEFAULT_MAX)
+        if old == self.max_pos: return
+        n = now_ms(); px = self.prices(self.coins_all); self.live.update(px)
+        eq0 = self.equity_now(px); cash0 = self.cash; target = eq0 / self.max_pos; fees0 = self.fees1
+        g = {"tf": self.tf, "from_tf": self.tf, "mode": "arrow_long", "from_mode": "arrow_long", "sizing": "pool", "from_sizing": "pool", "live_child": True,
+             "signal_timing": self.timing, "from_ms": n, "from_wib": ms_wib(n), "px": px, "sync": {}, "skipped": [], "max_positions": self.max_pos, "from_max_positions": old,
+             "tp_usd": self.tp_usd, "sl_usd": self.sl_usd, "sizing_rule": "equity/max_positions capped at cash", "balance": eq0, "equity_before": eq0, "cash_before": cash0,
+             "why": f"max positions {old} → {self.max_pos} (user 20:32 WIB: expand to {self.max_pos} slots)"}
+        self.segs.append(g); self.ep_segs.append(g); self.save_segs()
+        for c in sorted(self.P):
+            p = self.P[c]; v = p["units"] * px[c]
+            if v - target <= 0.01: continue
+            u = (v - target) / px[c]; t = now_ms()
+            append_jsonl(self.p("ledger.jsonl"), {"t": t, "t_wib": ms_wib(t), "coin": c, "side": "RESIZE", "px": px[c], "units": u, "reason": "RESIZE",
+                                                  "why": f"trim to equity/{self.max_pos} = ${target:.2f} (max positions {old} → {self.max_pos})", "bar_t": self.bar_of(t), "tf": self.tf, "timing": self.timing, "observed": px[c]})
+            self.fold(); q = self.P[c]; tr = self.trades1[-1]
+            g["sync"][c] = {"side": "RESIZE", "px": px[c], "units_sold": u, "proceeds": tr["proceeds"], "fee": tr["exit_fee"], "units_after": q["units"], "cost_after": q["cost"],
+                            "value_after": q["units"] * px[c], "tp_px": q["tp_px"], "sl_px": q["sl_px"]}
+            self.event("fill", f"{c}: paper RESIZE (partial SELL) {u:.6g} units ${u * px[c]:.2f} [{self.tf} · RESIZE] at {px[c]:.6g} (live price, trim to equity/{self.max_pos} ${target:.2f}) {ms_wib(t)} WIB, "
+                               f"fee ${tr['exit_fee']:.4f}, realised P&L ${tr['pnl']:+.2f}; now {q['units']:.6g} units, cost ${q['cost']:.2f}, entry {q['entry_px']:.6g}, TP {q['tp_px']:.6g} / SL {q['sl_px']:.6g}",
+                       key=f"f|{c}|{t}|RESIZE", coin=c, side="RESIZE", px=px[c], fill_t=t, reason="RESIZE", tf=self.tf, pnl=tr["pnl"])
+        eq1 = self.equity_now(px)
+        g.update(equity_after=eq1, fees=self.fees1 - fees0, cash_after=self.cash, held_after=sorted(self.P)); self.save_segs()
+        self.event("mode_switch", f"MAX POSITIONS {old} → {self.max_pos} at {ms_wib(n)} WIB: entry size = equity/{self.max_pos} (≈${target:.2f}) capped at cash; "
+                   + (", ".join(f"{c} trimmed {v['units_sold']:.6g} @ {v['px']:.6g} → ${v['value_after']:.2f}" for c, v in g["sync"].items()) or "no trims")
+                   + f"; balance ${eq0:.2f} carried over → ${eq1:.2f} (trim fees ${self.fees1 - fees0:.4f}); cash ${cash0:.2f} → ${self.cash:.2f}, {self.max_pos - len(self.P)} free slots",
+                   key=f"mp|{n}", from_max=old, to_max=self.max_pos, equity_before=eq0, equity_after=eq1)
+        self.mark(n, px)
     def save_eval(self):
         cut = now_ms() - 3 * 86_400_000
         self.flags = {k: v for k, v in self.flags.items() if int(k.split("|")[1]) > cut}
@@ -238,9 +289,10 @@ class LiveBot(pb.Bot):
                 free = self.max_pos - len(self.P)
                 if free <= 0: self.skip(c, bo, -ng, "slots full"); continue
                 if pausectl.current(): self.skip(c, bo, -ng, "paused"); continue
+                if self.cash < 1.0: self.skip(c, bo, -ng, "no cash"); continue
                 px = self.D[c]["opens"].get(ct)
                 if px is None: continue
-                self.fill(c, "BUY", px, rs, f"▲ up arrow on the closed {self.tf} bar {ms_wib(bo)[11:16]}, next bar open", t=ct, amt=self.cash / free)
+                self.fill(c, "BUY", px, rs, f"▲ up arrow on the closed {self.tf} bar {ms_wib(bo)[11:16]}, next bar open", t=ct, amt=self.entry_amt({c: px}))
             # 4) signal events + equity mark at the close
             for c, i in idx.items():
                 a = self.D[c]["ind"]["arrow"][i]
@@ -298,7 +350,8 @@ class LiveBot(pb.Bot):
             self.flags[f"{c}|{bo}"] = "up"; free = self.max_pos - len(self.P)
             if free <= 0: self.skip(c, bo, -ng, "slots full"); continue
             if pausectl.current(): self.skip(c, bo, -ng, "paused"); continue
-            self.fill(c, "BUY", px, "ARROW_INTRABAR", f"▲ up arrow intrabar: live {px:.6g} > exit line {ex:.6g}, strength {-ng:.2f} ATR", t=n, amt=self.cash / free, observed=px)
+            if self.cash < 1.0: self.skip(c, bo, -ng, "no cash"); continue
+            self.fill(c, "BUY", px, "ARROW_INTRABAR", f"▲ up arrow intrabar: live {px:.6g} > exit line {ex:.6g}, strength {-ng:.2f} ATR", t=n, amt=self.entry_amt(), observed=px)
         if ups: self.save_eval()
         if n - getattr(self, "_eval_log", 0) >= 60_000:
             self._eval_log = n; log.info(f"intrabar eval {self.tf} bar {ms_wib(bo)[11:16]}: {nd}/{len(coins)} coins, up {sum(1 for v in self.liveind.values() if v['arrow'] > 0 and v['bar_t'] == bo)}, held {'+'.join(sorted(self.P)) or 'none'}, cash ${self.cash:.2f}")
@@ -321,7 +374,7 @@ class LiveBot(pb.Bot):
             free = self.max_pos - len(self.P)
             if free <= 0: g["skipped"].append(c + " (slots full)"); continue
             if self.paused: g["skipped"].append(c + " (paused)"); continue
-            g["sync"][c] = {"side": "BUY", "px": px[c]}; self.fill(c, "BUY", px[c], "SWITCH", why + ": latest arrow up (strongest first)", t=n + 1, amt=self.cash / free)
+            g["sync"][c] = {"side": "BUY", "px": px[c]}; self.fill(c, "BUY", px[c], "SWITCH", why + ": latest arrow up (strongest first)", t=n + 1, amt=self.entry_amt())
         self.save_segs(); B = TFS[new]; self.last_ct = n // B * B + B; self.cover_from = n
         self.event("switch", f"TIMEFRAME {old} → {new} at {ms_wib(n)} WIB: " + (", ".join(f"{c} {v['side']} @ {v['px']:.6g}" for c, v in g["sync"].items()) or "no sync fills") + (f"; skipped {', '.join(g['skipped'])}" if g["skipped"] else ""), key=f"tf|{n}", tf=new, from_tf=old)
         self.mark(n, px); self.write_all(now_ms())
@@ -338,7 +391,7 @@ class LiveBot(pb.Bot):
             d = self.D.get(c) or {}; df, ind = d.get("df"), d.get("ind"); p = self.P.get(c)
             lp = self.live.get(c) or (float(df.c.values[-1]) if df is not None else None)
             tr = [t for t in self.trades1 if t["coin"] == c]; pn = {t["exit_t"]: t["pnl"] for t in tr}
-            fl = [dict(f, fee=(f["amt"] if f["side"] == "BUY" else 0) * FEE, **({"pnl": pn.get(f["t"])} if f["side"] == "SELL" else {"size": f.get("amt")})) for f in self.fills1.get(c, [])]
+            fl = [dict(f, fee=(f["amt"] if f["side"] == "BUY" else (f["units"] * f["px"] if f["side"] == "RESIZE" else 0)) * FEE, **({"pnl": pn.get(f["t"])} if f["side"] in ("SELL", "RESIZE") else {"size": f.get("amt")}), **({"size": f["units"] * f["px"]} if f["side"] == "RESIZE" else {})) for f in self.fills1.get(c, [])]
             pos = None
             if p:
                 vc = p["units"] * (lp or p["entry_px"])
@@ -364,21 +417,23 @@ class LiveBot(pb.Bot):
         skips = [s for s in jsonl_read(self.p("skips.jsonl"))]
         slots = [{"coin": c, "units": p["units"], "cost": p["cost"], "entry_t": p["entry_t"], "entry_px": p["entry_px"], "value_close": p["units"] * (self.live.get(c) or p["entry_px"]),
                   "tp_px": p["tp_px"], "sl_px": p["sl_px"], "reason": p.get("reason")} for c, p in sorted(self.P.items(), key=lambda x: x[1]["entry_t"])]
-        pool = {"sizing": "pool", "max_positions": self.max_pos, "cash": self.cash, "slots_used": len(self.P), "free_slots": free, "next_trade_size": self.cash / free if free > 0 else 0.0,
+        pool = {"sizing": "pool", "max_positions": self.max_pos, "cash": self.cash, "slots_used": len(self.P), "free_slots": free, "next_trade_size": self.entry_amt() if free > 0 else 0.0, "sizing_rule": "equity / max_positions, capped at cash",
                 "slots": slots, "tp_usd": self.tp_usd, "sl_usd": self.sl_usd, "since_ms": ep0.get("pool_since_ms"), "since_wib": ms_wib(ep0["pool_since_ms"]) if ep0.get("pool_since_ms") else None,
-                "switches": ep0.get("switches", []) + [{"at_ms": self.ep["from_ms"], "at_wib": self.ep["from_wib"], "why": "switch to intrabar + low-cap universe", "equity_before": self.ep["balance"], "equity_after": self.ep["balance"], "fees": 0.0, "cash_after": self.ep["balance"], "held_after": []}],
+                "switches": ep0.get("switches", []) + [{"at_ms": self.ep["from_ms"], "at_wib": self.ep["from_wib"], "why": "switch to intrabar + low-cap universe", "equity_before": self.ep["balance"], "equity_after": self.ep["balance"], "fees": 0.0, "cash_after": self.ep["balance"], "held_after": []}]
+                            + [{"at_ms": g["from_ms"], "at_wib": g["from_wib"], "why": g.get("why") or f"max positions {g['from_max_positions']} → {g['max_positions']}", "equity_before": g.get("equity_before"), "equity_after": g.get("equity_after"),
+                                "fees": g.get("fees", 0.0), "cash_after": g.get("cash_after"), "held_after": g.get("held_after", []), "trims": g.get("sync")} for g in self.ep_segs if g.get("from_max_positions")],
                 "skipped": (ep0.get("skipped", []) + skips)[-200:], "n_skipped": ep0.get("n_skipped", 0) + len(skips)}
         last_bar = max((int(d["df"].t.values[-1]) for d in self.D.values()), default=now // B * B - B)
         tpsl = f" · TP ${self.tp_usd:g} / SL ${self.sl_usd:g}" if self.tp_usd or self.sl_usd else ""
-        ms = [{"at_ms": g["from_ms"], "at_wib": g.get("from_wib"), "from": (g.get("from_mode") or "") + ("/" + g.get("from_sizing", "coin") if g.get("sizing") else ""), "to": g.get("mode") + ("/pool max %s" % g.get("max_positions") if g.get("sizing") == "pool" else "") + (" · " + g["signal_timing"] if g.get("engine") == "live_pool" else ""), "tf": g["tf"], "fills": g.get("sync")}
-              for g in self.segs[1:] if g.get("from_mode") and (g.get("from_mode") != g.get("mode") or (g.get("sizing") or "coin") != (g.get("from_sizing") or "coin") or g.get("engine") == "live_pool")]
+        ms = [{"at_ms": g["from_ms"], "at_wib": g.get("from_wib"), "from": (g.get("from_mode") or "") + ("/" + g.get("from_sizing", "coin") if g.get("sizing") else ""), "to": g.get("mode") + ("/pool max %s" % g.get("max_positions") if g.get("sizing") == "pool" else "") + (" · " + g["signal_timing"] if g.get("engine") == "live_pool" else "") + (" (was max %s)" % g["from_max_positions"] if g.get("from_max_positions") else ""), "tf": g["tf"], "fills": g.get("sync")}
+              for g in self.segs[1:] if g.get("from_mode") and (g.get("from_mode") != g.get("mode") or (g.get("sizing") or "coin") != (g.get("from_sizing") or "coin") or g.get("engine") == "live_pool" or (g.get("from_max_positions") and g.get("from_max_positions") != g.get("max_positions")))]
         self.state = {"mode": "PAPER SIMULATION - no real orders, no API keys", "trade_mode": "arrow_long", "trade_mode_text": MODES["arrow_long"] if self.timing == "close" else "Long-only · Exit Arrows evaluated intrabar on the live price (BUY the moment an up arrow appears, SELL on a down arrow)",
                       "signal_timing": self.timing, "signal_timing_text": "Signals: " + TIMING_TEXT[self.timing], "engine": "live_pool",
                       "universe": self.universe, "universe_active": self.active, "excluded": self.excluded, "exclude_top_mcap": self.excl_n,
                       "universe_info": (self.cfg.get("_universe") or {}), "legacy_coins": ep0["coins_old"],
                       "active_tf": self.tf, "segments": self.segs, "mode_switches": ms, "sizing": "pool", "max_positions": self.max_pos, "pool": pool,
                       "sizing_text": f"Max positions {self.max_pos} · pool sizing{tpsl} · Signals: {TIMING_TEXT[self.timing]}",
-                      "rules": {"tf": self.tf, "sizing": f"shared pool, max {self.max_pos} open longs; size = cash / free slots (strongest (close-exit)/ATR first, extra arrows skipped, not queued)",
+                      "rules": {"tf": self.tf, "sizing": f"shared pool, max {self.max_pos} open longs; size = equity / {self.max_pos} (≈${self.entry_amt() if self.cash > 0 else self.equity_now(self.live) / self.max_pos:.0f}) capped at cash (strongest (close-exit)/ATR first, extra arrows skipped, not queued)",
                                 "tp_usd": self.tp_usd, "sl_usd": self.sl_usd, "tpsl": "net of the entry fee and the 0.1% exit fee; live 5 s price checks fill at the trigger level; catch-up on bar high/low, SL first",
                                 "direction": "long-only", "signal_timing": self.timing,
                                 "entry": "Exit Arrow up, evaluated intrabar every ~5 s on the forming candle (live price as close): BUY at the live price at once" if self.timing == "intrabar" else "Exit Arrow up (close crosses above the Exit SSL HMA15) on the closed bar",
@@ -422,7 +477,7 @@ class LiveBot(pb.Bot):
         open(self.p("live.json"), "a").close(); os.utime(self.p("live.json"))
         self.liveind = {}; self.live = {}
         self.check_pause()
-        self.ensure_epoch(); self.fold(); self.check_universe(force=True)
+        self.ensure_epoch(); self.fold(); self.check_slots(); self.check_universe(force=True)
         self.event("start", f"paper bot started (pid {os.getpid()}), live pool engine · arrow_long · Signals: {TIMING_TEXT[self.timing]} · {self.tf} · max {self.max_pos} positions, TP ${self.tp_usd:g} / SL ${self.sl_usd:g} · "
                    f"universe {len(self.universe)} coins ({', '.join(self.universe)})" + (f" · excluded (top {self.excl_n} mcap): {', '.join(self.excluded)}" if self.excluded else f" · none in the top {self.excl_n} mcap") +
                    f" · held {', '.join(sorted(self.P)) or 'none'} · cash ${self.cash:.2f}")
