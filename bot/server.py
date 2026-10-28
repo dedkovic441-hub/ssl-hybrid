@@ -69,10 +69,13 @@ class H(BaseHTTPRequestHandler):
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            if self.headers.get("Access-Control-Request-Private-Network") == "true":
+                self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
     def authorized_remote(self):
         origin = self.headers.get("Origin", "")
         if not origin: return True
+        if origin.startswith("http://127.0.0.1:") or origin.startswith("http://localhost:"): return True
         if origin != "https://dedkovic441-hub.github.io": return False
         expected = os.environ.get("LOCAL_DASHBOARD_TOKEN", "").strip()
         supplied = self.headers.get("Authorization", "")
