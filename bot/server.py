@@ -5,6 +5,30 @@ import pausectl
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# Load LOCAL_DASHBOARD_TOKEN directly from bot/.env as a fallback.
+# This protects against the server being launched without inheriting the
+# environment created by start.sh. Never log or return the token.
+def load_local_dashboard_token():
+    if os.environ.get("LOCAL_DASHBOARD_TOKEN", "").strip():
+        return
+    env_path = os.path.join(HERE, ".env")
+    try:
+        with open(env_path, encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                if key.strip() == "LOCAL_DASHBOARD_TOKEN":
+                    value = value.strip().strip('"').strip("'")
+                    if value:
+                        os.environ["LOCAL_DASHBOARD_TOKEN"] = value
+                    return
+    except OSError:
+        pass
+
+load_local_dashboard_token()
 PORT = int(os.environ.get("PORT", "8811"))
 COINS = {"ZEC", "NEAR", "PEPE", "SOL", "XRP"}
 
