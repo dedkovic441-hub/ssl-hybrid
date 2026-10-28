@@ -6,3 +6,5 @@ data/
 state.json
 summary.json
 live.json
+bot/.env
+.env
