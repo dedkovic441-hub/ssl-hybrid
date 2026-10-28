@@ -62,10 +62,30 @@ class H(BaseHTTPRequestHandler):
     def send(self, code, body, ctype="application/json"):
         b = body if isinstance(body, bytes) else body.encode()
         self.send_response(code); self.send_header("Content-Type", ctype); self.send_header("Cache-Control", "no-store")
+        origin = self.headers.get("Origin", "")
+        allowed = "https://dedkovic441-hub.github.io"
+        if origin == allowed:
+            self.send_header("Access-Control-Allow-Origin", allowed)
+            self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
+    def authorized_remote(self):
+        origin = self.headers.get("Origin", "")
+        if not origin: return True
+        if origin != "https://dedkovic441-hub.github.io": return False
+        expected = os.environ.get("LOCAL_DASHBOARD_TOKEN", "").strip()
+        supplied = self.headers.get("Authorization", "")
+        return bool(expected) and supplied == "Bearer " + expected
+    def do_OPTIONS(self):
+        if self.headers.get("Origin", "") != "https://dedkovic441-hub.github.io":
+            return self.send(403, '{"error":"origin not allowed"}')
+        return self.send(204, b"")
     def js(self, obj): self.send(200, json.dumps(obj, separators=(",", ":")))
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query); p = u.path
+        if self.headers.get("Origin") and not self.authorized_remote():
+            return self.send(403, '{"error":"remote access denied: configure LOCAL_DASHBOARD_TOKEN and check the dashboard origin"}')
         try:
             if p in ("/", "/index.html"): return self.send(200, open(os.path.join(HERE, "dashboard.html"), "rb").read(), "text/html; charset=utf-8")
             if p == "/static/lightweight-charts.js": return self.send(200, open(os.path.join(HERE, "static/lightweight-charts.js"), "rb").read(), "application/javascript")
@@ -93,7 +113,9 @@ class H(BaseHTTPRequestHandler):
 
     def do_POST(self):
         p = urlparse(self.path).path
-        # only same-origin dashboard calls: a custom header forces a CORS preflight that this server never approves
+        if self.headers.get("Origin") and not self.authorized_remote():
+            return self.send(403, '{"error":"remote access denied: configure LOCAL_DASHBOARD_TOKEN and check the dashboard origin"}')
+        # Keep the existing custom-header guard for commands.
         if self.headers.get("X-Requested-With") != "ssl-dashboard": return self.send(403, '{"error":"forbidden"}')
         try:
             n = int(self.headers.get("Content-Length") or 0); body = json.loads(self.rfile.read(n) or b"{}") if n else {}
