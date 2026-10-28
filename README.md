@@ -21,8 +21,7 @@ PAPER TRADING ONLY. No exchange keys, no real orders.
    0.1% fee per side, each coin compounds separately.
    Settings: HMA60 baseline, SSL2 JMA5, Exit HMA15, ATR14 WMA.
    Linux/Mac/WSL: bash start.sh  (stop: bash stop.sh) -> http://127.0.0.1:8811/
-   Note: ssl_core.py has data paths set to /workspace/ssl_hybrid; edit DATA/OUT
-   at the top to a folder on your machine. Native Windows needs WSL.
+   The bot now stores market data in `ssl-hybrid/data` automatically (relative to the repository); no manual DATA/OUT path edits are needed. In WSL, create/activate `bot/.venv`, install `numpy pandas requests`, run `python bot/fetch_data.py` once, then `cd bot && bash start.sh`. The supervisor uses `bot/.venv/bin/python` when available. Native Windows needs WSL.
 
 4) Pool sizing + TP/SL (since 2026-10-27 17:50 WIB)
    bot/config.json:
