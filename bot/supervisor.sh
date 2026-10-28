@@ -3,11 +3,13 @@
 cd "$(dirname "$0")"; D=$PWD; R=$D/run; mkdir -p "$R"
 echo $$ > "$R/supervisor.pid"
 PORT=${PORT:-8811}
+PYTHON="$D/.venv/bin/python"
+[ -x "$PYTHON" ] || PYTHON=python3
 alive() { [ -f "$1" ] && kill -0 "$(cat "$1")" 2>/dev/null; }
 log() { echo "$(TZ=Asia/Jakarta date '+%F %T') WIB [supervisor] $*" >> "$D/supervisor.log"; }
-start_bot() { setsid nohup python3 -u "$D/paper_bot.py" >> "$D/bot.stdout.log" 2>&1 < /dev/null & echo $! > "$R/bot.pid"; log "started bot pid $(cat "$R/bot.pid")"; }
+start_bot() { setsid nohup "$PYTHON" -u "$D/paper_bot.py" >> "$D/bot.stdout.log" 2>&1 < /dev/null & echo $! > "$R/bot.pid"; log "started bot pid $(cat "$R/bot.pid")"; }
 start_pub() { setsid nohup bash "$D/publish_loop.sh" >> "$D/publish.log" 2>&1 < /dev/null & echo $! > "$R/publisher.pid"; log "started publisher pid $(cat "$R/publisher.pid") (bot.json -> GitHub Pages every 10 min)"; }
-start_srv() { PORT=$PORT setsid nohup python3 -u "$D/server.py" >> "$D/server.log" 2>&1 < /dev/null & echo $! > "$R/server.pid"; log "started server pid $(cat "$R/server.pid") on 127.0.0.1:$PORT"; }
+start_srv() { PORT=$PORT setsid nohup "$PYTHON" -u "$D/server.py" >> "$D/server.log" 2>&1 < /dev/null & echo $! > "$R/server.pid"; log "started server pid $(cat "$R/server.pid") on 127.0.0.1:$PORT"; }
 trap 'log "supervisor stopping"; rm -f "$R/supervisor.pid"; exit 0' TERM INT
 log "supervisor up pid $$"
 while true; do
