@@ -196,11 +196,21 @@ function tfUI(){
   const sw = (ST.segments||[]).slice(1); const l = sw[sw.length-1];
   $("tfMsg").textContent = TFREQ ? `switching to ${TFREQ}…` : (l ? `on ${TF} since ${wt(l.from_ms)} WIB (from ${l.from_tf}) · ${sw.length} switch${sw.length>1?"es":""}` : `on ${TF} since start`);
 }
-document.querySelectorAll("#tfSeg button").forEach(b=>b.onclick = async ()=>{
-  if (b.dataset.tf === TF) return; TFREQ = b.dataset.tf; tfUI();
-  try { await post("/api/timeframe", {tf: b.dataset.tf}); } catch (e) { TFREQ = null; alert("Timeframe switch failed: " + e.message); }
+async function requestTimeframe(tf){
+  if (!["15m","1h","4h"].includes(tf)) return;
+  if (tf === TF) { $("tfMsg").textContent = "Bot already uses " + tf; return; }
+  TFREQ = tf; tfUI();
+  try { await post("/api/timeframe", {tf}); }
+  catch (e) { TFREQ = null; tfUI(); alert("Timeframe switch failed: " + e.message); return; }
   let n = 0; const iv = setInterval(()=>{ poll(); if (!TFREQ || ++n > 80) { clearInterval(iv); if (TFREQ) { TFREQ = null; tfUI(); } } }, 2500);
-});
+}
+document.querySelectorAll("#tfSeg button").forEach(b=>b.onclick = ()=>requestTimeframe(b.dataset.tf));
+// A timeframe link opened from the public dashboard is handled by this local controller.
+const deepLinkTf = new URLSearchParams(window.location.search).get("tf");
+if (["15m","1h","4h"].includes(deepLinkTf)) {
+  window.history.replaceState({}, "", window.location.pathname);
+  setTimeout(()=>requestTimeframe(deepLinkTf), 1200);
+}
 function modeUI(){
   const m = ST.trade_mode || "cross_long";
   $("sigR").textContent = ST.signal_timing === "intrabar" ? "Signals intrabar (live): every ~5 s the Exit SSL is recomputed on the forming candle with the live Binance price as its close; an up arrow BUYS at once at the live price (reason ARROW_INTRABAR), a down arrow on a held coin SELLS at once; max one entry and one exit per coin per candle, no re-entry in the candle of an exit; an arrow only visible on the closed bar fills at the next open (ARROW_CLOSE). The TradingView arrow can disappear before the close; the fill stands." : "Decisions on bar close, filled at the next bar's open (= first trade of the bar).";
