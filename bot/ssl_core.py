@@ -15,8 +15,10 @@ Backtest rules (research): long_sig/short_sig = close crosses the upper/lower ch
 """
 import numpy as np, pandas as pd, json, glob, os, math
 
-DATA = "/workspace/ssl_hybrid/data"
-OUT = "/workspace/ssl_hybrid"
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+DATA = os.path.join(ROOT, "data")
+OUT = ROOT
 FEE = 0.001
 WARMUP = 120
 BARS_PER_YEAR = {"15m": 365*96, "1h": 365*24, "4h": 365*6, "1d": 365, "1w": 52.14}
