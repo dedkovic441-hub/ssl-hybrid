@@ -3,7 +3,9 @@ import requests, time, json, os, sys
 import pandas as pd
 BASES = ["https://api.binance.com", "https://data-api.binance.vision"]
 MEXC = "https://api.mexc.com"
-OUT = "/workspace/ssl_hybrid/data"; os.makedirs(OUT, exist_ok=True)
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+OUT = os.path.join(ROOT, "data"); os.makedirs(OUT, exist_ok=True)
 STABLE = {"USDC","FDUSD","TUSD","BUSD","DAI","USDP","EUR","AEUR","EURI","USD1","XUSD","USDE","PAXG","RLUSD","BFUSD","U","WBTC","WBETH","USDS","PYUSD","FRAX","USTC","XAUT"}
 # tokenized stocks / ETFs listed on Binance spot (not crypto)
 STOCKS = {"SNDKB","SPCXB","SOXLB","CRCLB","MUB","MSTRB","SKHYB","TSLAB","SNXXB","NVDAB","AAPLB","COINB","HOODB","QQQB","SPYB","GOOGLB","METAB","AMZNB"}
