@@ -98,3 +98,26 @@ PAPER TRADING ONLY. No exchange keys, no real orders.
    CAKE was trimmed 73.1076 units @ 2.056 ($150.31, fee $0.1503). It now holds 48.0468
    units, cost $99.08, entry 2.06, TP 2.1683 / SL 1.95996. Equity went $493.92 -> $493.77
    (only the trim fee) and cash $244.83 -> $394.99, with 4 slots free.
+
+5) Local SSL Hybrid dashboard (GitHub Pages + PC bot)
+   Open https://dedkovic441-hub.github.io/ssl-hybrid-dashboard/local.html
+   This page is copied from the existing dashboard and adds a Local PC Bot panel.
+   The Python bot and its API still run on your own PC/WSL; GitHub Pages does not run Python.
+
+   Secure setup (WSL, from the repository's bot folder):
+     cd /path/to/ssl-hybrid/bot
+     bash stop.sh
+     export LOCAL_DASHBOARD_TOKEN="$(openssl rand -hex 32)"
+     echo "$LOCAL_DASHBOARD_TOKEN"
+     bash start.sh
+   Copy the printed token into the Local SSL Hybrid dashboard's Private access token field.
+   Keep that token private. Do not commit it, put it in a file in the public repository,
+   or share it. If you restart the bot later, set the same token in that terminal before
+   running bash start.sh; if you generate a new token, paste the new value into the page.
+   If your browser asks permission for the page to access devices on your local network,
+   allow it for this page only. The API remains bound to 127.0.0.1 and should not be
+   exposed with port forwarding or a public tunnel.
+
+   This cross-origin connection requires a modern browser that permits a GitHub Pages
+   site to access the local loopback address. If your browser blocks local-network access,
+   use the local dashboard at http://127.0.0.1:8811/ instead. Paper trading only.
