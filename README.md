@@ -120,3 +120,22 @@ PAPER TRADING ONLY. No exchange keys, no real orders.
    This cross-origin connection requires a modern browser that permits a GitHub Pages
    site to access the local loopback address. If your browser blocks local-network access,
    use the local dashboard at http://127.0.0.1:8811/ instead. Paper trading only.
+
+## Use the GitHub Pages dashboard with the local bot
+
+The public dashboard has a separate **Local SSL Hybrid** page that connects from your browser to the Python bot running on your own PC. The bot stays local; GitHub Pages does not run Python.
+
+1. In WSL, create `bot/.env` with a private `LOCAL_DASHBOARD_TOKEN`. This file is ignored by Git and must never be committed.
+2. Start the local bot with `cd /home/acer/ssl-hybrid/bot && bash start.sh`.
+3. Open [Local SSL Hybrid dashboard](https://dedkovic441-hub.github.io/ssl-hybrid-dashboard/local.html), enter the same token in **Private access token**, and select **Connect**.
+4. If the browser asks permission to access devices on your local network, allow it for this site. Keep the local API bound to `127.0.0.1`; do not expose port 8811 publicly.
+
+To generate a token in WSL, run:
+```bash
+cd /home/acer/ssl-hybrid
+TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(32))')
+printf 'LOCAL_DASHBOARD_TOKEN=%s\n' "$TOKEN" > bot/.env
+chmod 600 bot/.env
+printf '\nCopy this token into the dashboard: %s\n' "$TOKEN"
+```
+The dashboard token is only for local API access; it is not a Binance API key. This project remains paper-trading only.
