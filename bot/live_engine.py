@@ -98,6 +98,13 @@ class LiveBot(pb.Bot):
     def tf(self): return self.tf_now() if getattr(self, "ep", None) else "15m"
     def ensure_epoch(self):
         """Freeze the earlier run (pool cash, no open positions) into epoch0.json and start the live_pool segment."""
+        # A fresh installation may not have state.json yet. Bootstrap one paper
+        # snapshot with the inherited engine before trying to migrate to live_pool.
+        if not os.path.exists(self.p("state.json")) or not os.path.exists(self.p("live.json")):
+            log.warning("state.json/live.json missing; bootstrapping initial paper state before live-pool migration")
+            self.process_bar()
+        if not os.path.exists(self.p("state.json")) or not os.path.exists(self.p("live.json")):
+            raise RuntimeError("Could not initialize state.json/live.json; check bot.log for the paper-engine error")
         for g in self.segs:
             if g.get("engine") == "live_pool": self.ep = g
         if self.ep:
